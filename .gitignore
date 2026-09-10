@@ -3,6 +3,7 @@ out/
 dist/
 .vscode-test/
 *.vsix
+.claude/
 
 # scratch designs / generator output left next to a design during manual testing
 /*.design.json

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="320" viewBox="0 0 680 320" font-family="Segoe UI, system-ui, sans-serif" font-size="13">
+  <rect width="680" height="320" fill="#1e1e1e"/>
+
+  <!-- palette -->
+  <rect x="120" y="24" width="440" height="96" rx="6" fill="#252526" stroke="#454545"/>
+  <rect x="132" y="36" width="416" height="26" rx="3" fill="#3c3c3c" stroke="#007acc"/>
+  <text x="142" y="54" fill="#e6e6e6">&gt; Binary Designer: Generate C Header</text>
+  <rect x="132" y="68" width="416" height="26" fill="#04395e"/>
+  <text x="142" y="86" fill="#ffffff">Binary Designer: Generate C Header</text>
+  <text x="142" y="112" fill="#c9c9c9">Binary Designer: Generate Layout Doc</text>
+
+  <!-- toast -->
+  <rect x="300" y="150" width="356" height="52" rx="6" fill="#252526" stroke="#454545"/>
+  <circle cx="322" cy="176" r="7" fill="none" stroke="#3aa675" stroke-width="2"/>
+  <path d="M319 176 l3 3 l6 -7" stroke="#3aa675" stroke-width="2" fill="none"/>
+  <text x="340" y="172" fill="#e6e6e6">Wrote SensorFrame.h and SensorFrame_layout.md.</text>
+  <text x="340" y="190" fill="#9cc7f5" font-size="11">Open header</text>
+
+  <!-- explorer tree -->
+  <text x="24" y="240" fill="#9ca3af" font-size="12">EXPLORER</text>
+  <g font-family="Consolas, monospace" font-size="12" fill="#c9c9c9">
+    <text x="24" y="262">▾ examples</text>
+    <text x="44" y="282" fill="#9cdcfe">SensorFrame.design.json</text>
+    <text x="44" y="302" fill="#7ee787">SensorFrame.h            ← new</text>
+  </g>
+  <g font-family="Consolas, monospace" font-size="12">
+    <text x="360" y="262" fill="#c9c9c9">▾ examples/generated</text>
+    <text x="380" y="282" fill="#7ee787">SensorFrame.bin</text>
+    <text x="380" y="302" fill="#7ee787">SensorFrame_layout.md</text>
+  </g>
+</svg>

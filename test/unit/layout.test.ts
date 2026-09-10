@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { computeLayout } from '../../src/core/layout';
+import { computeLayout, structSummaries } from '../../src/core/layout';
 import { Design } from '../../src/core/types';
 
 function d(partial: Partial<Design>): Design {
@@ -154,5 +154,57 @@ test('multi-dimensional shorthand array', () => {
   }));
   assert.equal(l.rows[0].size, 4 * 3 * 2);
   assert.equal(l.rows[0].cArraySuffix, '[4][3]');
+  assert.equal(l.rows[0].elemSize, 2);
+  assert.equal(l.rows[0].elemCount, 12);
   assert.equal(l.size, 24);
+});
+
+test('rows carry element size / count and a struct tag', () => {
+  const design = d({
+    packing: 1,
+    structs: { Vec3: { fields: [
+      { name: 'x', type: 'float32' }, { name: 'y', type: 'float32' }, { name: 'z', type: 'float32' },
+    ] } },
+    fields: [
+      { name: 'head', type: 'uint32' },
+      { name: 'pts', type: 'Vec3[64]' },
+      { name: 'here', type: 'struct', fields: [{ name: 'a', type: 'uint8' }, { name: 'b', type: 'uint16' }] },
+    ],
+  });
+  const l = computeLayout(design);
+  assert.equal(l.rows[0].elemSize, 4);
+  assert.equal(l.rows[0].elemCount, 1);
+  assert.equal(l.rows[0].structTag, undefined);
+
+  assert.equal(l.rows[1].elemSize, 12); // one Vec3
+  assert.equal(l.rows[1].elemCount, 64);
+  assert.equal(l.rows[1].size, 768);
+  assert.equal(l.rows[1].structTag, 'Vec3');
+
+  assert.equal(l.rows[2].elemSize, 3);
+  assert.equal(l.rows[2].structTag, 'T_here');
+});
+
+test('structSummaries lists reusable and inline structs with their sizes', () => {
+  const design = d({
+    packing: 1,
+    structs: {
+      Vec3: { fields: [
+        { name: 'x', type: 'float32' }, { name: 'y', type: 'float32' }, { name: 'z', type: 'float32' },
+      ] },
+      Pair: { fields: [{ name: 'lo', type: 'uint16' }, { name: 'hi', type: 'uint16' }] },
+    },
+    fields: [
+      { name: 'v', type: 'Vec3' },
+      { name: 'hdr', type: 'struct', fields: [{ name: 'kind', type: 'uint8' }, { name: 'len', type: 'uint16' }] },
+    ],
+  });
+  const s = structSummaries(design);
+  const byName = Object.fromEntries(s.map((x) => [x.name, x]));
+  assert.equal(byName['Vec3'].size, 12);
+  assert.equal(byName['Vec3'].reusable, true);
+  assert.equal(byName['Vec3'].fieldCount, 3);
+  assert.equal(byName['Pair'].size, 4);
+  assert.equal(byName['T_hdr'].size, 3);
+  assert.equal(byName['T_hdr'].reusable, false);
 });

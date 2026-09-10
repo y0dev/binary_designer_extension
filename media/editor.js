@@ -19,6 +19,7 @@
     jsonFocused: false,
     autoJsonNotified: false,
     layout: /** @type {any} */ (null),
+    structs: /** @type {any[]} */ ([]),
     errors: /** @type {{path:string,message:string}[]} */ ([]),
     warnings: /** @type {{path:string,message:string}[]} */ ([]),
     parseError: /** @type {string|null} */ (null),
@@ -100,6 +101,7 @@
     state.parseError = msg.parseError || null;
     state.formRepresentable = msg.formRepresentable !== false;
     state.layout = msg.layout || null;
+    state.structs = msg.structs || [];
     state.byteSize = typeof msg.byteSize === 'number' ? msg.byteSize : null;
     state.defaulted = msg.defaulted || [];
     state.bytes = msg.bytesB64 ? b64ToBytes(msg.bytesB64) : null;
@@ -213,6 +215,30 @@
       body.appendChild(el('p', { class: 'hint', text: state.parseError ? 'Fix the JSON to see the layout.' : 'Layout unavailable.' }));
       return;
     }
+
+    // ---- struct sizes ----
+    const structs = state.structs || [];
+    if (structs.length > 0) {
+      const srows = structs.map((s) => el('tr', {}, [
+        el('td', {}, [el('code', { text: s.name }), s.reusable ? null : el('span', { class: 'dim', text: ' inline' })]),
+        el('td', { class: 'num', text: String(s.size) }),
+        el('td', { class: 'num', text: String(s.align) }),
+      ]));
+      srows.push(el('tr', { class: 'frame-row' }, [
+        el('td', {}, [el('code', { text: l.name || 'frame' }), el('span', { class: 'dim', text: ' frame' })]),
+        el('td', { class: 'num', text: String(l.size) }),
+        el('td', { class: 'num', text: String(l.align) }),
+      ]));
+      body.appendChild(el('h4', { text: 'Struct sizes' }));
+      body.appendChild(el('table', { class: 'structs' }, [
+        el('thead', {}, el('tr', {}, [
+          el('th', { text: 'Struct' }), el('th', { class: 'num', text: 'Size' }), el('th', { class: 'num', text: 'Align' }),
+        ])),
+        el('tbody', {}, srows),
+      ]));
+    }
+
+    // ---- frame layout ----
     const rows = [];
     let cursor = 0;
     for (const r of l.rows) {
@@ -224,6 +250,7 @@
           el('td', { class: 'num', text: String(r.offset - cursor) }),
         ]));
       }
+      const each = r.elemCount > 1 ? ` (${r.elemSize}×${r.elemCount})` : '';
       const tr = el('tr', {
         'data-field': r.name,
         class: r.reserved ? 'reserved' : '',
@@ -234,7 +261,10 @@
         el('td', { class: 'num', text: String(r.offset) }),
         el('td', {}, el('code', { text: r.name })),
         el('td', {}, el('code', { text: r.cType + r.cArraySuffix })),
-        el('td', { class: 'num', text: String(r.size) }),
+        el('td', { class: 'num', title: each ? `${r.elemSize} bytes each × ${r.elemCount}` : '' }, [
+          String(r.size),
+          each ? el('span', { class: 'dim', text: each }) : null,
+        ]),
       ]);
       rows.push(tr);
       cursor = r.offset + r.size;
@@ -247,6 +277,7 @@
         el('td', { class: 'num', text: String(l.size - cursor) }),
       ]));
     }
+    body.appendChild(el('h4', { text: 'Frame layout' }));
     body.appendChild(el('table', {}, [
       el('thead', {}, el('tr', {}, [
         el('th', { text: 'Off' }), el('th', { text: 'Name' }), el('th', { text: 'C type' }), el('th', { class: 'num', text: 'Size' }),
@@ -254,7 +285,7 @@
       el('tbody', {}, rows),
     ]));
     body.appendChild(el('div', { class: 'totals' }, [
-      el('div', { text: `Total: ${l.size} bytes` }),
+      el('div', { text: `Frame: ${l.size} bytes` }),
       el('div', { text: `Alignment: ${l.align} · packing ${l.packing} · ${l.endianness}-endian` }),
       el('div', { text: `Padding inserted: ${l.paddingBytes} bytes` }),
     ]));

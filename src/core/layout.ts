@@ -21,6 +21,7 @@ import {
   LayoutResult,
   LayoutRow,
   Packing,
+  StructSummary,
 } from './types';
 import {
   SIZED_TYPES,
@@ -338,6 +339,7 @@ function packFields(ctx: LayoutContext, fields: Field[], parentName: string): La
     const baseNote = shape.dynamicOuter
       ? `dynamic: count = ${shape.dynamicOuter}`
       : shape.note;
+    const elemCount = Math.max(1, productOf(shape.dims));
     rows.push({
       name: field.name,
       cType,
@@ -345,6 +347,9 @@ function packFields(ctx: LayoutContext, fields: Field[], parentName: string): La
       offset,
       size: shape.totalSize,
       align: shape.align,
+      elemSize: shape.elemSize,
+      elemCount,
+      structTag: shape.kind === 'struct' ? cType : undefined,
       note: field.reserved
         ? baseNote ? `reserved; ${baseNote}` : 'reserved'
         : baseNote,
@@ -368,4 +373,59 @@ function packFields(ctx: LayoutContext, fields: Field[], parentName: string): La
     packing: ctx.packing,
     endianness: ctx.endianness,
   };
+}
+
+/**
+ * Size / alignment of every struct type a design uses: each reusable
+ * `design.structs` entry, plus every inline `type: "struct"` found in the tree.
+ * Silently skips structs that don't resolve (validateDesign reports those).
+ */
+export function structSummaries(design: Design, packingDefault: Packing = 1): StructSummary[] {
+  const out: StructSummary[] = [];
+  const seen = new Set<string>();
+
+  const ctx = makeContext(design, packingDefault);
+  for (const name of Object.keys(design.structs ?? {})) {
+    try {
+      const l = structLayout(ctx, name);
+      out.push({
+        name,
+        size: l.size,
+        align: l.align,
+        fieldCount: design.structs![name].fields.length,
+        reusable: true,
+      });
+      seen.add(name);
+    } catch {
+      /* unresolved struct — skip */
+    }
+  }
+
+  const walk = (fields: Field[], parentName: string): void => {
+    for (const f of fields) {
+      if (f.type === 'struct' && Array.isArray(f.fields)) {
+        const tag = `${parentName}_${f.name}`;
+        if (!seen.has(tag)) {
+          seen.add(tag);
+          try {
+            const l = layoutFieldList(design, f.fields, tag, packingDefault);
+            out.push({ name: tag, size: l.size, align: l.align, fieldCount: f.fields.length, reusable: false });
+          } catch {
+            /* skip */
+          }
+        }
+        walk(f.fields, tag);
+      }
+      if (f.items) {
+        walk([f.items], parentName);
+      }
+    }
+  };
+
+  walk(design.fields ?? [], design.name);
+  for (const name of Object.keys(design.structs ?? {})) {
+    walk(design.structs![name].fields, name);
+  }
+
+  return out;
 }

@@ -1,9 +1,10 @@
 /**
- * Markdown layout doc: `offset · name · C type · size` plus totals and padding.
+ * Markdown layout doc: struct sizes, then `offset · name · C type · size` for the
+ * whole frame, plus totals and padding.
  */
 
 import { Design } from './types';
-import { computeLayout } from './layout';
+import { computeLayout, structSummaries } from './layout';
 
 export interface LayoutDocOptions {
   sourceFileName?: string;
@@ -11,6 +12,7 @@ export interface LayoutDocOptions {
 
 export function emitLayoutDoc(design: Design, opts: LayoutDocOptions = {}): string {
   const layout = computeLayout(design);
+  const structs = structSummaries(design);
   const src = opts.sourceFileName ?? `${design.name}.design.json`;
 
   const lines: string[] = [];
@@ -23,33 +25,50 @@ export function emitLayoutDoc(design: Design, opts: LayoutDocOptions = {}): stri
   }
   lines.push(`- **Endianness:** ${layout.endianness}`);
   lines.push(`- **Packing:** ${layout.packing} byte(s)`);
-  lines.push(`- **Total size:** ${layout.size} bytes`);
-  lines.push(`- **Struct alignment:** ${layout.align}`);
+  lines.push(`- **Frame size:** ${layout.size} bytes`);
+  lines.push(`- **Frame alignment:** ${layout.align}`);
   lines.push(`- **Padding inserted:** ${layout.paddingBytes} bytes`);
   lines.push('');
-  lines.push('| Offset | Name | C type | Size | Align | Notes |');
-  lines.push('| -----: | ---- | ------ | ---: | ----: | ----- |');
+
+  if (structs.length > 0) {
+    lines.push('## Struct sizes');
+    lines.push('');
+    lines.push('| Struct | Size | Align | Fields |');
+    lines.push('| ------ | ---: | ----: | -----: |');
+    for (const s of structs) {
+      const name = s.reusable ? `\`${s.name}\`` : `\`${s.name}\` *(inline)*`;
+      lines.push(`| ${name} | ${s.size} | ${s.align} | ${s.fieldCount} |`);
+    }
+    lines.push(`| **\`${design.name}\`** *(frame)* | **${layout.size}** | ${layout.align} | ${(design.fields ?? []).length} |`);
+    lines.push('');
+  }
+
+  lines.push('## Frame layout');
+  lines.push('');
+  lines.push('| Offset | Name | C type | Bytes | Each | Align | Notes |');
+  lines.push('| -----: | ---- | ------ | ----: | ---- | ----: | ----- |');
 
   let cursor = 0;
   for (const row of layout.rows) {
     if (row.offset > cursor) {
       lines.push(
-        `| ${cursor} | *(padding)* | \`uint8_t[${row.offset - cursor}]\` | ${row.offset - cursor} | 1 | inserted by packer |`,
+        `| ${cursor} | *(padding)* | \`uint8_t[${row.offset - cursor}]\` | ${row.offset - cursor} |  | 1 | inserted by packer |`,
       );
     }
     const cType = `${row.cType}${row.cArraySuffix}`;
+    const each = row.elemCount > 1 ? `${row.elemSize} B × ${row.elemCount}` : '';
     lines.push(
-      `| ${row.offset} | \`${row.name}\` | \`${cType}\` | ${row.size} | ${row.align} | ${row.note ?? ''} |`,
+      `| ${row.offset} | \`${row.name}\` | \`${cType}\` | ${row.size} | ${each} | ${row.align} | ${row.note ?? ''} |`,
     );
     cursor = row.offset + row.size;
   }
   if (layout.size > cursor) {
     lines.push(
-      `| ${cursor} | *(tail padding)* | \`uint8_t[${layout.size - cursor}]\` | ${layout.size - cursor} | 1 | struct size rounded to alignment |`,
+      `| ${cursor} | *(tail padding)* | \`uint8_t[${layout.size - cursor}]\` | ${layout.size - cursor} |  | 1 | frame size rounded to alignment |`,
     );
   }
   lines.push('');
-  lines.push(`_Total: **${layout.size} bytes**._`);
+  lines.push(`_Frame total: **${layout.size} bytes**._`);
   lines.push('');
   return lines.join('\n');
 }

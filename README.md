@@ -19,9 +19,11 @@ shorthand); inline `enum` (value → label) and bitfield (name : width) tables;
 drag a row's grip to reorder, duplicate a row, move in / out of structs. A
 **JSON tab** edits the whole design as text and is auto-selected when the tree
 can't represent it losslessly (multi-dimensional arrays). A live **layout
-preview** shows `Offset · Name · C type · Size` computed under the design's
-`packing` and `endianness`, with the total size and every padding byte the
-packer inserts.
+preview** shows a **Struct sizes** table — every reusable and inline struct with
+its own size and alignment, then the frame — and a **Frame layout** table of
+`Offset · Name · C type · Size` (`elem × count` for arrays) computed under the
+design's `packing` and `endianness`, with the total size and every padding byte
+the packer inserts.
 
 ![The form editor with the live layout preview](docs/images/form-editor.png)
 
@@ -109,9 +111,12 @@ _Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
 - **Tree editor** — fields, arrays, enums, bitfields and reusable structs; a
   type combo; inline `enum` (value → label) and bitfield (name : width) tables;
   drag a row's `⠿` grip to reorder; duplicate, move in / out of structs.
-- **Layout preview** — `Offset · Name · C type · Size` under the design's
-  `packing` and `endianness`, with the total size and every packer-inserted
-  padding byte.
+- **Struct sizes** — a table of every reusable and inline struct with its own
+  size and alignment, then the frame total, so nested layouts are sized at a
+  glance rather than only the whole frame.
+- **Layout preview** — `Offset · Name · C type · Size` (with `elem × count` for
+  arrays) under the design's `packing` and `endianness`, plus the total size and
+  every packer-inserted padding byte.
 - **Binary tab** — the sample binary as an `Offset · Hex · ASCII` dump, each
   field's bytes colour-coded; hover a byte, a field chip or a layout row to
   cross-highlight the other two.
@@ -225,6 +230,57 @@ A field's `array: { "count": 8 }` (fixed) or `array: { "countField": "n" }`
 (length-prefixed) wraps any type; `size` is required for `bytes` / `padding` /
 `ascii` / `utf8` / `utf16`; `offset` pins an explicit offset; `endianness`
 overrides per field; `reserved: true` marks a future-use slot.
+
+## Creating a frame — walkthrough
+
+Build the `SensorFrame` example from scratch.
+
+### 1 — New design
+
+Run **Binary Designer: Create Design** from the Command Palette and give it a
+name that is a valid C identifier (it becomes the top-level `struct` tag). The
+file opens in the form editor, not a text editor.
+
+![Command Palette: Create Design, then name it SensorFrame](docs/images/step1-create.png)
+
+### 2 — Lay out the header
+
+In the **Form** tab, use **+ Field** to add the fixed header — `magic`
+(`uint32`), `version` (`uint16`), `state` (`uint8`), `flags` (`uint8`) — and set
+each row's type in the combo and its design-time `value`. Toggle **`{}`** on a
+row for an inline `enum` table and **`b`** for a bitfield (name : width) table.
+The layout preview on the right updates every keystroke.
+
+![The form editor with the header fields and the live layout preview](docs/images/form-editor.png)
+
+### 3 — Add a reusable struct, then use it
+
+In **Reusable structs**, click **+ struct**, name it `Vec3`, and add `x` / `y` /
+`z` as `float32`. Back in **Fields**, add a `samples` field and type `Vec3[64]`
+in the type combo — every struct name shows up there and as shorthand. The
+**Struct sizes** panel now lists `Vec3` at 12 bytes alongside the growing frame
+total.
+
+![A reusable Vec3 struct, the type combo, and the Struct sizes panel](docs/images/step3-struct.png)
+
+### 4 — See the bytes and rearrange
+
+Switch to the **Binary** tab. Each field's bytes are colour-coded; drag a field
+chip (or its highlighted bytes) onto another to reorder the struct, drag a type
+from the **Add** palette onto a byte to insert it there, and use **reserve u32**
+/ **reserve[16]** for space held for the future. Everything writes straight back
+to the `.design.json`.
+
+![The Binary tab: colour-coded hex dump, the Add palette, and a reserved slot](docs/images/binary-tab.png)
+
+### 5 — Generate
+
+Run **Binary Designer: Generate C Header** (and **Generate Sample Binary** /
+**Generate Layout Doc**) from the palette, the editor toolbar, the Designs view,
+or the Explorer right-click menu. You get `<name>.h` + `<name>_layout.md` (and
+`<name>.bin`) next to the design, or in `binaryDesigner.outputFolder`.
+
+![Generate C Header, the confirmation toast, and the new files in the Explorer](docs/images/step5-generate.png)
 
 ## Commands
 

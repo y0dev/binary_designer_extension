@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import {
+  StructSummary,
   computeLayout,
   emitBinary,
   parseDesignJson,
+  structSummaries,
   validateDesign,
 } from '../core';
 
@@ -25,6 +27,8 @@ interface HostToWebview {
   warnings: Array<{ path: string; message: string }>;
   formRepresentable: boolean;
   layout: ReturnType<typeof computeLayout> | null;
+  /** size / alignment of every struct type the design uses */
+  structs: StructSummary[];
   /** base64 of the emitted sample binary (null when invalid or too large) */
   bytesB64: string | null;
   /** total emitted size in bytes, even when `bytesB64` is omitted for size */
@@ -64,6 +68,7 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
         warnings: [],
         formRepresentable: true,
         layout: null,
+        structs: [],
         bytesB64: null,
         byteSize: null,
         defaulted: [],
@@ -77,6 +82,7 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
         if (v.ok || v.errors.every((e) => e.path.startsWith('fields') === false)) {
           try {
             payload.layout = computeLayout(design);
+            payload.structs = structSummaries(design);
           } catch {
             payload.layout = null;
           }

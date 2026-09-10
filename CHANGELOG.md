@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Struct sizes** — the layout preview and `<name>_layout.md` now show every
+  reusable and inline struct with its own size / alignment / field count, not
+  just the whole frame; the frame table gains an `elem × count` column and
+  per-row element sizes. New `structSummaries(design)` core export; `LayoutRow`
+  carries `elemSize` / `elemCount` / `structTag`.
+- **README** — a "Creating a frame" image walkthrough (create → header →
+  reusable struct → Binary tab → generate).
 - **Binary tab** in the design editor: a live, colour-coded hex dump of the
   sample binary, with hover cross-highlighting against the layout preview.
 - **Add fields from the Binary tab**: an Add palette (`u8`…`f64`, `char[16]`,

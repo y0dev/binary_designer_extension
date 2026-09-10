@@ -5,21 +5,30 @@ A telemetry frame from a 3-axis sensor: header, status, reserved space, and a fi
 
 - **Endianness:** little
 - **Packing:** 1 byte(s)
-- **Total size:** 816 bytes
-- **Struct alignment:** 1
+- **Frame size:** 816 bytes
+- **Frame alignment:** 1
 - **Padding inserted:** 0 bytes
 
-| Offset | Name | C type | Size | Align | Notes |
-| -----: | ---- | ------ | ---: | ----: | ----- |
-| 0 | `magic` | `uint32_t` | 4 | 1 |  |
-| 4 | `version` | `uint16_t` | 2 | 1 |  |
-| 6 | `state` | `uint8_t` | 1 | 1 |  |
-| 7 | `flags` | `uint8_t` | 1 | 1 |  |
-| 8 | `reserved0` | `uint16_t` | 2 | 1 | reserved |
-| 10 | `sample_count` | `uint16_t` | 2 | 1 |  |
-| 12 | `temps` | `int16_t[4]` | 8 | 1 |  |
-| 20 | `label` | `char[16]` | 16 | 1 |  |
-| 36 | `reserved1` | `uint8_t[12]` | 12 | 1 | reserved |
-| 48 | `samples` | `Vec3[64]` | 768 | 1 |  |
+## Struct sizes
 
-_Total: **816 bytes**._
+| Struct | Size | Align | Fields |
+| ------ | ---: | ----: | -----: |
+| `Vec3` | 12 | 1 | 3 |
+| **`SensorFrame`** *(frame)* | **816** | 1 | 10 |
+
+## Frame layout
+
+| Offset | Name | C type | Bytes | Each | Align | Notes |
+| -----: | ---- | ------ | ----: | ---- | ----: | ----- |
+| 0 | `magic` | `uint32_t` | 4 |  | 1 |  |
+| 4 | `version` | `uint16_t` | 2 |  | 1 |  |
+| 6 | `state` | `uint8_t` | 1 |  | 1 |  |
+| 7 | `flags` | `uint8_t` | 1 |  | 1 |  |
+| 8 | `reserved0` | `uint16_t` | 2 |  | 1 | reserved |
+| 10 | `sample_count` | `uint16_t` | 2 |  | 1 |  |
+| 12 | `temps` | `int16_t[4]` | 8 | 2 B × 4 | 1 |  |
+| 20 | `label` | `char[16]` | 16 | 1 B × 16 | 1 |  |
+| 36 | `reserved1` | `uint8_t[12]` | 12 | 1 B × 12 | 1 | reserved |
+| 48 | `samples` | `Vec3[64]` | 768 | 12 B × 64 | 1 |  |
+
+_Frame total: **816 bytes**._

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="420" viewBox="0 0 820 420" font-family="Segoe UI, system-ui, sans-serif" font-size="12">
+  <rect width="820" height="420" fill="#1e1e1e"/>
+
+  <!-- left: form -->
+  <g transform="translate(16,16)">
+    <rect x="0" y="0" width="500" height="388" rx="4" fill="#1e1e1e" stroke="#3c3c3c"/>
+
+    <text x="12" y="20" fill="#9ca3af" font-weight="600">Reusable structs</text>
+    <rect x="12" y="30" width="476" height="128" rx="4" fill="#242424" stroke="#3c3c3c"/>
+    <text x="24" y="50" fill="#c9c9c9">struct</text>
+    <rect x="70" y="38" width="120" height="18" rx="3" fill="#3c3c3c"/><text x="78" y="51" fill="#4ec9b0">Vec3</text>
+    <g transform="translate(28,60)">
+      <rect x="0" y="0" width="440" height="26" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+      <rect x="6" y="4" width="90" height="18" rx="3" fill="#3c3c3c"/><text x="12" y="17" fill="#e6e6e6">x</text>
+      <rect x="102" y="4" width="90" height="18" rx="3" fill="#37373d"/><text x="108" y="17" fill="#e6e6e6">float32</text>
+    </g>
+    <g transform="translate(28,90)">
+      <rect x="0" y="0" width="440" height="26" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+      <rect x="6" y="4" width="90" height="18" rx="3" fill="#3c3c3c"/><text x="12" y="17" fill="#e6e6e6">y</text>
+      <rect x="102" y="4" width="90" height="18" rx="3" fill="#37373d"/><text x="108" y="17" fill="#e6e6e6">float32</text>
+    </g>
+    <g transform="translate(28,120)">
+      <rect x="0" y="0" width="440" height="26" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+      <rect x="6" y="4" width="90" height="18" rx="3" fill="#3c3c3c"/><text x="12" y="17" fill="#e6e6e6">z</text>
+      <rect x="102" y="4" width="90" height="18" rx="3" fill="#37373d"/><text x="108" y="17" fill="#e6e6e6">float32</text>
+    </g>
+
+    <text x="12" y="188" fill="#9ca3af" font-weight="600">Fields (top-level struct body)</text>
+    <g transform="translate(12,198)">
+      <rect x="0" y="0" width="476" height="30" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+      <rect x="8" y="5" width="120" height="20" rx="3" fill="#3c3c3c"/><text x="16" y="19" fill="#e6e6e6">samples</text>
+      <rect x="134" y="5" width="130" height="20" rx="3" fill="#37373d" stroke="#007acc"/><text x="142" y="19" fill="#4ec9b0">Vec3[64] ▾</text>
+    </g>
+    <!-- type combo dropdown -->
+    <g transform="translate(146,228)">
+      <rect x="0" y="0" width="150" height="96" rx="4" fill="#252526" stroke="#454545"/>
+      <rect x="0" y="0" width="150" height="20" fill="#04395e"/><text x="8" y="14" fill="#fff">Vec3</text>
+      <text x="8" y="36" fill="#c9c9c9">Vec3[64]</text>
+      <text x="8" y="54" fill="#c9c9c9">uint32</text>
+      <text x="8" y="72" fill="#c9c9c9">float32</text>
+      <text x="8" y="90" fill="#c9c9c9">bytes</text>
+    </g>
+  </g>
+
+  <!-- right: layout preview with Struct sizes -->
+  <g transform="translate(532,16)">
+    <rect x="0" y="0" width="272" height="388" rx="4" fill="#252526" stroke="#3c3c3c"/>
+    <text x="12" y="22" fill="#e6e6e6" font-weight="600">Layout preview</text>
+
+    <text x="12" y="48" fill="#9ca3af">Struct sizes</text>
+    <line x1="12" y1="54" x2="260" y2="54" stroke="#3c3c3c"/>
+    <text x="12" y="72" fill="#9ca3af" font-size="11">Struct              Size  Align</text>
+    <text x="12" y="92" fill="#d4d4d4" font-family="Consolas, monospace">Vec3                  12      1</text>
+    <text x="12" y="112" fill="#7ee787" font-family="Consolas, monospace" font-weight="700">SensorFrame  frame  816      1</text>
+
+    <text x="12" y="146" fill="#9ca3af">Frame layout</text>
+    <line x1="12" y1="152" x2="260" y2="152" stroke="#3c3c3c"/>
+    <g fill="#d4d4d4" font-family="Consolas, monospace" font-size="11">
+      <text x="12" y="170">0    magic       uint32_t     4</text>
+      <text x="12" y="188">4    version     uint16_t     2</text>
+      <text x="12" y="206">…</text>
+      <text x="12" y="224">48   samples     Vec3[64]   768</text>
+      <text x="24" y="240" fill="#8a8a8a">12×64</text>
+    </g>
+    <line x1="12" y1="252" x2="260" y2="252" stroke="#3c3c3c"/>
+    <text x="12" y="272" fill="#7ee787">Frame: 816 bytes</text>
+    <text x="12" y="290" fill="#9ca3af" font-size="11">Alignment: 1 · packing 1 · little-endian</text>
+  </g>
+</svg>

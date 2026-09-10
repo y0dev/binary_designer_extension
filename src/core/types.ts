@@ -143,11 +143,29 @@ export interface LayoutRow {
   /** Array dimensions appended in C order, e.g. `[64]` or `[4][3]`. */
   cArraySuffix: string;
   offset: number;
+  /** Total bytes this member occupies (`elemSize * elemCount`). */
   size: number;
   align: number;
+  /** Size of one element, before any array multiplication. */
+  elemSize: number;
+  /** Number of elements — 1 when the member is not an array. */
+  elemCount: number;
+  /** When this member is a struct (named or inline), its C tag name. */
+  structTag?: string;
   note?: string;
   /** True when the source field is a reserved-for-future-use slot. */
   reserved?: boolean;
+}
+
+/** Size / alignment of a struct type used in a design. */
+export interface StructSummary {
+  /** C tag: a `structs` key, or `<Parent>_<field>` for an inline struct. */
+  name: string;
+  size: number;
+  align: number;
+  fieldCount: number;
+  /** True for a `design.structs` entry, false for an inline `type: "struct"`. */
+  reusable: boolean;
 }
 
 export interface LayoutResult {
