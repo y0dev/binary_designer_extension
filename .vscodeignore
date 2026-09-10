@@ -1,0 +1,22 @@
+.vscode/**
+.vscode-test/**
+.github/**
+src/**
+test/**
+out/**
+scripts/**
+docs/**
+node_modules/**
+esbuild.js
+.eslintrc.json
+.mocharc.json
+tsconfig*.json
+.gitignore
+.editorconfig
+**/*.map
+**/*.ts
+
+# ship only the design sources from examples/, not generated output or scratch
+*.design.json
+examples/**
+!examples/*.design.json

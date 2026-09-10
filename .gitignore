@@ -1,0 +1,13 @@
+node_modules/
+out/
+dist/
+.vscode-test/
+*.vsix
+
+# scratch designs / generator output left next to a design during manual testing
+/*.design.json
+/*.h
+/*.bin
+examples/SensorFrame.h
+examples/SensorFrame.bin
+examples/SensorFrame_layout.md

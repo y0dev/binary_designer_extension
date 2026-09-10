@@ -1,0 +1,257 @@
+{
+  "name": "binary-file-designer",
+  "displayName": "Binary File Designer",
+  "description": "Design binary structures in a form editor and generate a sample binary, a C header, and a layout document for embedded development.",
+  "version": "0.1.0",
+  "publisher": "devdoesit",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#171E2B",
+    "theme": "dark"
+  },
+  "author": {
+    "name": "Devontae Reid",
+    "url": "https://www.devontaereid.com"
+  },
+  "homepage": "https://www.devontaereid.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/y0dev/binary-designer-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/y0dev/binary-designer-extension/issues"
+  },
+  "qna": false,
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=18"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "binary",
+    "struct",
+    "C header",
+    "codegen",
+    "firmware",
+    "embedded",
+    "layout"
+  ],
+  "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "Designs are pure JSON data and are never executed; the generators only read a design and write the files you explicitly request."
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "binaryDesigner.designEditor",
+        "displayName": "Binary File Designer",
+        "selector": [
+          {
+            "filenamePattern": "*.design.json"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "binaryDesigner.createDesign",
+        "title": "Create Design",
+        "category": "Binary Designer"
+      },
+      {
+        "command": "binaryDesigner.generateBinary",
+        "title": "Generate Sample Binary",
+        "category": "Binary Designer"
+      },
+      {
+        "command": "binaryDesigner.generateHeader",
+        "title": "Generate C Header",
+        "category": "Binary Designer"
+      },
+      {
+        "command": "binaryDesigner.generateLayoutDoc",
+        "title": "Generate Layout Doc",
+        "category": "Binary Designer"
+      },
+      {
+        "command": "binaryDesigner.roundTripCheck",
+        "title": "Round-trip Check",
+        "category": "Binary Designer"
+      },
+      {
+        "command": "binaryDesigner.openDesign",
+        "title": "Open Design",
+        "category": "Binary Designer"
+      },
+      {
+        "command": "binaryDesigner.refreshDesigns",
+        "title": "Refresh Designs View",
+        "category": "Binary Designer",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "binaryDesigner.createDesign" },
+        { "command": "binaryDesigner.generateBinary" },
+        { "command": "binaryDesigner.generateHeader" },
+        { "command": "binaryDesigner.generateLayoutDoc" },
+        { "command": "binaryDesigner.roundTripCheck" },
+        { "command": "binaryDesigner.openDesign" },
+        { "command": "binaryDesigner.refreshDesigns", "when": "false" }
+      ],
+      "view/title": [
+        {
+          "command": "binaryDesigner.refreshDesigns",
+          "when": "view == binaryDesigner.designs",
+          "group": "navigation"
+        },
+        {
+          "command": "binaryDesigner.createDesign",
+          "when": "view == binaryDesigner.designs",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "binaryDesigner.generateBinary",
+          "when": "view == binaryDesigner.designs && viewItem == design",
+          "group": "generate@1"
+        },
+        {
+          "command": "binaryDesigner.generateHeader",
+          "when": "view == binaryDesigner.designs && viewItem == design",
+          "group": "generate@2"
+        },
+        {
+          "command": "binaryDesigner.generateLayoutDoc",
+          "when": "view == binaryDesigner.designs && viewItem == design",
+          "group": "generate@3"
+        },
+        {
+          "command": "binaryDesigner.roundTripCheck",
+          "when": "view == binaryDesigner.designs && viewItem == design",
+          "group": "generate@4"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "binaryDesigner.generateBinary",
+          "when": "resourceFilename =~ /\\.design\\.json$/",
+          "group": "binaryDesigner@1"
+        },
+        {
+          "command": "binaryDesigner.generateHeader",
+          "when": "resourceFilename =~ /\\.design\\.json$/",
+          "group": "binaryDesigner@2"
+        },
+        {
+          "command": "binaryDesigner.generateLayoutDoc",
+          "when": "resourceFilename =~ /\\.design\\.json$/",
+          "group": "binaryDesigner@3"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "binaryDesigner",
+          "title": "Binary Designer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "binaryDesigner": [
+        {
+          "id": "binaryDesigner.designs",
+          "name": "Designs",
+          "contextualTitle": "Binary Designer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Binary File Designer",
+      "properties": {
+        "binaryDesigner.outputFolder": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Folder for generated artifacts, relative to the workspace root. Leave empty to write next to the `*.design.json` file."
+        },
+        "binaryDesigner.defaultPacking": {
+          "type": "number",
+          "enum": [1, 2, 4, 8],
+          "default": 1,
+          "description": "Default struct packing (in bytes) applied when a design omits \"packing\"."
+        },
+        "binaryDesigner.header.staticAssert": {
+          "type": "boolean",
+          "default": true,
+          "description": "Emit a _Static_assert on sizeof(struct) so layout drift is caught at compile time."
+        },
+        "binaryDesigner.header.includeStyle": {
+          "type": "string",
+          "enum": ["angle", "quote"],
+          "default": "angle",
+          "description": "Include stdint.h with <angle> brackets or \"quotes\"."
+        },
+        "binaryDesigner.header.enumTypedefForFields": {
+          "type": "boolean",
+          "default": false,
+          "description": "When an enum field's container size matches, declare it with the generated enum typedef instead of its integer type."
+        },
+        "binaryDesigner.header.arrayMax": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "Default `MAX` capacity used for `array.countField` members in the C header (`0` = prompt when generating)."
+        },
+        "binaryDesigner.identifierAutoFix": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show one-click \"fix name\" actions for invalid C identifiers in the editor."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "preinstall": "node scripts/check-node.js",
+    "vscode:prepublish": "node esbuild.js --production && npm run check-types",
+    "esbuild": "node esbuild.js",
+    "check-types": "tsc -p tsconfig.json && tsc -p tsconfig.webview.json",
+    "compile": "node esbuild.js && npm run check-types",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint src --ext ts",
+    "compile-tests": "tsc -p tsconfig.test.json",
+    "pretest": "npm run compile-tests",
+    "test:unit": "mocha \"out/test/unit/**/*.test.js\"",
+    "test": "npm run test:unit",
+    "example": "npm run compile-tests && node ./out/src/scripts/buildExample.js",
+    "package": "node scripts/clean-vsix.js && npm run check-types && node esbuild.js --production && npx --yes @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.20.2",
+    "eslint": "^8.57.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.3.0",
+    "typescript": "^5.4.0"
+  }
+}

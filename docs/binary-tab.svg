@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="424" viewBox="0 0 720 424" font-family="Segoe UI, system-ui, sans-serif" font-size="12">
+  <rect width="720" height="424" fill="#1e1e1e"/>
+
+  <!-- tabs -->
+  <rect x="12" y="10" width="48" height="22" rx="3" fill="#333"/><text x="36" y="25" fill="#ccc" text-anchor="middle">Form</text>
+  <rect x="64" y="10" width="48" height="22" rx="3" fill="#333"/><text x="88" y="25" fill="#ccc" text-anchor="middle">JSON</text>
+  <rect x="116" y="10" width="54" height="22" rx="3" fill="#0e639c"/><text x="143" y="25" fill="#fff" text-anchor="middle">Binary</text>
+
+  <!-- Add palette -->
+  <text x="12" y="53" fill="#9ca3af" font-size="11">Add:</text>
+  <g font-family="Consolas, monospace" font-size="10.5">
+    <g fill="#2b2b2b" stroke="#555">
+      <rect x="44"  y="42" width="28" height="16" rx="3"/><rect x="76"  y="42" width="34" height="16" rx="3"/>
+      <rect x="114" y="42" width="34" height="16" rx="3"/><rect x="152" y="42" width="34" height="16" rx="3"/>
+      <rect x="190" y="42" width="28" height="16" rx="3"/><rect x="222" y="42" width="34" height="16" rx="3"/>
+      <rect x="260" y="42" width="34" height="16" rx="3"/><rect x="298" y="42" width="34" height="16" rx="3"/>
+      <rect x="336" y="42" width="34" height="16" rx="3"/><rect x="374" y="42" width="34" height="16" rx="3"/>
+      <rect x="412" y="42" width="54" height="16" rx="3"/><rect x="470" y="42" width="44" height="16" rx="3"/>
+      <rect x="518" y="42" width="72" height="16" rx="3" stroke="#8a8a8a" stroke-dasharray="3 2"/>
+      <rect x="594" y="42" width="66" height="16" rx="3" stroke="#8a8a8a" stroke-dasharray="3 2"/>
+      <rect x="664" y="42" width="40" height="16" rx="3" stroke="#6f9bd6" stroke-dasharray="3 2"/>
+    </g>
+    <g fill="#d4d4d4">
+      <text x="49" y="54">u8</text><text x="81" y="54">u16</text><text x="119" y="54">u32</text><text x="157" y="54">u64</text>
+      <text x="195" y="54">i8</text><text x="227" y="54">i16</text><text x="265" y="54">i32</text><text x="303" y="54">i64</text>
+      <text x="341" y="54">f32</text><text x="379" y="54">f64</text><text x="417" y="54">char[16]</text><text x="474" y="54">bytes</text>
+      <text x="522" y="54" font-style="italic" fill="#b0b0b0">reserve u32</text>
+      <text x="598" y="54" font-style="italic" fill="#b0b0b0">reserve[16]</text>
+      <text x="669" y="54" fill="#9cc7f5">Vec3</text>
+    </g>
+  </g>
+
+  <!-- field chips -->
+  <g font-size="11">
+    <g transform="translate(12,68)">
+      <rect x="0" y="0" width="96" height="20" rx="10" fill="#3a5a86" stroke="#6f9bd6"/>
+      <circle cx="12" cy="10" r="4" fill="#6f9bd6"/><text x="22" y="14" fill="#e6e6e6">magic @0·4B</text>
+    </g>
+    <g transform="translate(116,68)">
+      <rect x="0" y="0" width="104" height="20" rx="10" fill="#2f5a3f" stroke="#69c88a"/>
+      <circle cx="12" cy="10" r="4" fill="#69c88a"/><text x="22" y="14" fill="#e6e6e6">version @4·2B</text>
+    </g>
+    <g transform="translate(228,68)">
+      <rect x="0" y="0" width="150" height="20" rx="10" fill="#6b4a1f" stroke="#d79b52"/>
+      <circle cx="12" cy="10" r="4" fill="#d79b52"/><text x="22" y="14" fill="#e6e6e6">sample_count @8·2B</text>
+    </g>
+    <g transform="translate(386,68)">
+      <rect x="0" y="0" width="118" height="20" rx="10" fill="#4a2f6b" stroke="#a986d6"/>
+      <circle cx="12" cy="10" r="4" fill="#a986d6"/><text x="22" y="14" fill="#e6e6e6">samples @10·768B</text>
+    </g>
+    <g transform="translate(512,68)" opacity="0.65">
+      <rect x="0" y="0" width="92" height="20" rx="10" fill="#333" stroke="#777" stroke-dasharray="3 2"/>
+      <text x="12" y="14" fill="#bbb">↕ dragging…</text>
+    </g>
+  </g>
+
+  <text x="12" y="106" fill="#9ca3af">Click a type to append it; drag a type onto a byte to insert it there. Drag a field to reorder.</text>
+
+  <!-- hex dump -->
+  <g font-family="Consolas, monospace" font-size="12.5" transform="translate(12,124)">
+    <rect x="0" y="0" width="696" height="242" rx="4" fill="#1b1b1b" stroke="#3c3c3c"/>
+    <g transform="translate(12,24)">
+      <text x="0" y="0" fill="#7c7c7c">00000000</text>
+      <rect x="74" y="-12" width="104" height="18" rx="4" fill="#3a5a86" fill-opacity="0.5"/>
+      <text x="78" y="0" fill="#e8e8e8">31 4d 52 46</text>
+      <rect x="184" y="-12" width="56" height="18" rx="4" fill="#2f5a3f" fill-opacity="0.5"/>
+      <text x="188" y="0" fill="#e8e8e8">02 00</text>
+      <text x="248" y="0" fill="#6b6b6b">05 00</text>
+      <rect x="300" y="-12" width="56" height="18" rx="4" fill="#6b4a1f" fill-opacity="0.55"/>
+      <text x="304" y="0" fill="#e8e8e8">40 00</text>
+      <text x="366" y="0" fill="#6b6b6b">00 00  00 00 00 00</text>
+      <text x="560" y="0" fill="#8a8a8a">1MRF.....@......</text>
+
+      <text x="0" y="26" fill="#7c7c7c">00000010</text>
+      <rect x="74" y="14" width="430" height="18" rx="4" fill="#4a2f6b" fill-opacity="0.5"/>
+      <text x="78" y="26" fill="#e8e8e8">00 00 80 3f  00 00 00 00  00 00 00 00  00 00 80 3f</text>
+      <text x="560" y="26" fill="#8a8a8a">...?...........?</text>
+
+      <text x="0" y="52" fill="#7c7c7c">00000020</text>
+      <rect x="74" y="40" width="430" height="18" rx="4" fill="#4a2f6b" fill-opacity="0.5"/>
+      <text x="78" y="52" fill="#e8e8e8">00 00 00 00  00 00 80 3f  00 00 00 00  00 00 00 00</text>
+      <text x="560" y="52" fill="#8a8a8a">.......?........</text>
+
+      <defs>
+        <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#3a3a3a"/><rect width="2" height="6" fill="#565656"/>
+        </pattern>
+      </defs>
+      <text x="0" y="78" fill="#7c7c7c">00000030</text>
+      <rect x="74" y="66" width="200" height="18" rx="4" fill="url(#hatch)" stroke="#6a6a6a" stroke-dasharray="3 2"/>
+      <text x="78" y="78" fill="#9a9a9a">00 00 00 00  00 00 00 00</text>
+      <text x="290" y="78" fill="#8a8a8a" font-style="italic">reserved1[8] — reserved</text>
+    </g>
+    <rect x="12" y="162" width="470" height="22" rx="4" fill="none" stroke="#0e639c" stroke-dasharray="4 3"/>
+    <text x="20" y="177" fill="#6f9bd6">drop here → add / move field to the end</text>
+    <text x="12" y="216" fill="#7c7c7c">3 field value(s) fell back to a default (0 / NUL / zero-fill).</text>
+  </g>
+</svg>

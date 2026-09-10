@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" font-family="Segoe UI, system-ui, sans-serif" font-size="13">
+  <rect width="960" height="600" fill="#1e1e1e"/>
+  <!-- toolbar -->
+  <rect x="0" y="0" width="960" height="40" fill="#252526"/>
+  <rect x="12" y="8" width="52" height="24" rx="3" fill="#0e639c"/>
+  <text x="38" y="24" fill="#fff" text-anchor="middle">Form</text>
+  <rect x="66" y="8" width="52" height="24" rx="3" fill="#333"/>
+  <text x="92" y="24" fill="#ccc" text-anchor="middle">JSON</text>
+  <rect x="120" y="8" width="56" height="24" rx="3" fill="#333"/>
+  <text x="148" y="24" fill="#ccc" text-anchor="middle">Binary</text>
+  <rect x="640" y="8" width="52" height="24" rx="3" fill="#0e639c"/><text x="666" y="24" fill="#fff" text-anchor="middle">Save</text>
+  <rect x="698" y="8" width="72" height="24" rx="3" fill="#333"/><text x="734" y="24" fill="#ccc" text-anchor="middle">Draft</text>
+  <rect x="778" y="8" width="60" height="24" rx="3" fill="#333"/><text x="808" y="24" fill="#ccc" text-anchor="middle">Binary</text>
+  <rect x="844" y="8" width="60" height="24" rx="3" fill="#333"/><text x="874" y="24" fill="#ccc" text-anchor="middle">Header</text>
+
+  <!-- status -->
+  <rect x="12" y="48" width="620" height="24" rx="3" fill="#123b1e" stroke="#2ea043"/>
+  <text x="22" y="64" fill="#7ee787">&#10003; Design is valid.</text>
+
+  <!-- form column -->
+  <g transform="translate(12,84)">
+    <rect x="0" y="0" width="620" height="70" rx="4" fill="#252526" stroke="#3c3c3c"/>
+    <text x="10" y="18" fill="#9ca3af">Design</text>
+    <text x="14" y="40" fill="#ccc">name</text>
+    <rect x="70" y="28" width="180" height="20" rx="3" fill="#3c3c3c"/><text x="78" y="43" fill="#e6e6e6">SensorFrame</text>
+    <text x="270" y="40" fill="#ccc">endian</text>
+    <rect x="322" y="28" width="80" height="20" rx="3" fill="#3c3c3c"/><text x="330" y="43" fill="#e6e6e6">little</text>
+    <text x="420" y="40" fill="#ccc">packing</text>
+    <rect x="478" y="28" width="40" height="20" rx="3" fill="#3c3c3c"/><text x="486" y="43" fill="#e6e6e6">1</text>
+
+    <text x="0" y="98" fill="#9ca3af">Fields (top-level struct body)</text>
+
+    <!-- rows -->
+    <g transform="translate(0,110)">
+      <g>
+        <rect x="0" y="0" width="620" height="30" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+        <rect x="8" y="5" width="120" height="20" rx="3" fill="#3c3c3c"/><text x="16" y="19" fill="#e6e6e6">magic</text>
+        <rect x="134" y="5" width="110" height="20" rx="3" fill="#37373d"/><text x="142" y="19" fill="#e6e6e6">uint32 &#9662;</text>
+        <rect x="360" y="5" width="150" height="20" rx="3" fill="#3c3c3c"/><text x="368" y="19" fill="#9cdcfe">SENSOR_MAGIC</text>
+        <text x="524" y="19" fill="#808080">{} b &#8593; &#8595; &#10697; &#10005;</text>
+      </g>
+      <g transform="translate(0,36)">
+        <rect x="0" y="0" width="620" height="30" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+        <rect x="8" y="5" width="120" height="20" rx="3" fill="#3c3c3c"/><text x="16" y="19" fill="#e6e6e6">state</text>
+        <rect x="134" y="5" width="110" height="20" rx="3" fill="#37373d"/><text x="142" y="19" fill="#e6e6e6">uint8 &#9662;</text>
+        <rect x="360" y="5" width="60" height="20" rx="3" fill="#3c3c3c"/><text x="368" y="19" fill="#b5cea8">1</text>
+        <text x="524" y="19" fill="#808080">{} b &#8593; &#8595; &#10697; &#10005;</text>
+      </g>
+      <!-- enum subtable -->
+      <g transform="translate(24,72)">
+        <text x="0" y="12" fill="#808080">enum (value &#8594; label)</text>
+        <rect x="0" y="18" width="60" height="18" rx="3" fill="#3c3c3c"/><text x="6" y="31" fill="#b5cea8">0</text>
+        <rect x="66" y="18" width="120" height="18" rx="3" fill="#3c3c3c"/><text x="72" y="31" fill="#e6e6e6">idle</text>
+        <rect x="0" y="40" width="60" height="18" rx="3" fill="#3c3c3c"/><text x="6" y="53" fill="#b5cea8">1</text>
+        <rect x="66" y="40" width="120" height="18" rx="3" fill="#3c3c3c"/><text x="72" y="53" fill="#e6e6e6">active</text>
+      </g>
+      <g transform="translate(0,140)">
+        <rect x="0" y="0" width="620" height="30" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+        <rect x="8" y="5" width="120" height="20" rx="3" fill="#3c3c3c"/><text x="16" y="19" fill="#e6e6e6">flags</text>
+        <rect x="134" y="5" width="110" height="20" rx="3" fill="#37373d"/><text x="142" y="19" fill="#e6e6e6">uint8 &#9662;</text>
+        <rect x="360" y="5" width="140" height="20" rx="3" fill="#2d2d2d"/><text x="368" y="19" fill="#808080">(edit in JSON)</text>
+        <text x="524" y="19" fill="#808080">{} b &#8593; &#8595; &#10697; &#10005;</text>
+      </g>
+      <g transform="translate(24,176)">
+        <text x="0" y="12" fill="#808080">bitfield (name : width), LSB first</text>
+        <rect x="0" y="18" width="120" height="18" rx="3" fill="#3c3c3c"/><text x="6" y="31" fill="#e6e6e6">enabled</text>
+        <rect x="126" y="18" width="40" height="18" rx="3" fill="#3c3c3c"/><text x="132" y="31" fill="#b5cea8">1</text>
+        <rect x="0" y="40" width="120" height="18" rx="3" fill="#3c3c3c"/><text x="6" y="53" fill="#e6e6e6">mode</text>
+        <rect x="126" y="40" width="40" height="18" rx="3" fill="#3c3c3c"/><text x="132" y="53" fill="#b5cea8">3</text>
+      </g>
+      <g transform="translate(0,244)">
+        <rect x="0" y="0" width="620" height="30" rx="4" fill="#2a2d2e" stroke="#3c3c3c"/>
+        <rect x="8" y="5" width="120" height="20" rx="3" fill="#3c3c3c"/><text x="16" y="19" fill="#e6e6e6">samples</text>
+        <rect x="134" y="5" width="110" height="20" rx="3" fill="#37373d"/><text x="142" y="19" fill="#4ec9b0">Vec3[64] &#9662;</text>
+        <rect x="360" y="5" width="150" height="20" rx="3" fill="#3c3c3c"/><text x="368" y="19" fill="#ce9178">["repeat", …]</text>
+        <text x="524" y="19" fill="#808080">{} b &#8593; &#8595; &#10697; &#10005;</text>
+      </g>
+      <g transform="translate(0,282)">
+        <rect x="0" y="0" width="90" height="24" rx="3" fill="#333"/><text x="12" y="16" fill="#ccc">+ Field</text>
+        <rect x="98" y="0" width="90" height="24" rx="3" fill="#333"/><text x="110" y="16" fill="#ccc">+ Array</text>
+        <rect x="196" y="0" width="90" height="24" rx="3" fill="#333"/><text x="208" y="16" fill="#ccc">+ Enum</text>
+        <rect x="294" y="0" width="96" height="24" rx="3" fill="#333"/><text x="306" y="16" fill="#ccc">+ Struct</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- preview panel -->
+  <g transform="translate(648,84)">
+    <rect x="0" y="0" width="300" height="470" rx="4" fill="#252526" stroke="#3c3c3c"/>
+    <text x="12" y="22" fill="#e6e6e6" font-weight="600">Layout preview</text>
+    <line x1="12" y1="32" x2="288" y2="32" stroke="#3c3c3c"/>
+    <text x="12" y="50" fill="#9ca3af">Off  Name          C type        Size</text>
+    <g fill="#d4d4d4">
+      <text x="12" y="72">0    magic         uint32_t         4</text>
+      <text x="12" y="92">4    version       uint16_t         2</text>
+      <text x="12" y="112">6    state         uint8_t          1</text>
+      <text x="12" y="132">7    flags         uint8_t          1</text>
+      <text x="12" y="152">8    sample_count  uint16_t         2</text>
+      <text x="12" y="172">10   temps         int16_t[4]       8</text>
+      <text x="12" y="192">18   samples       Vec3[64]       768</text>
+      <text x="12" y="212">786  label         char[16]        16</text>
+    </g>
+    <line x1="12" y1="228" x2="288" y2="228" stroke="#3c3c3c"/>
+    <text x="12" y="250" fill="#7ee787">Total: 802 bytes</text>
+    <text x="12" y="270" fill="#9ca3af">Alignment: 1 · packing 1 · little-endian</text>
+    <text x="12" y="290" fill="#9ca3af">Padding inserted: 0 bytes</text>
+  </g>
+</svg>

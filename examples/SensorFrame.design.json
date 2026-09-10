@@ -1,0 +1,153 @@
+{
+  "name": "SensorFrame",
+  "endianness": "little",
+  "packing": 1,
+  "description": "A telemetry frame from a 3-axis sensor: header, status, and a fixed bank of samples.",
+  "constants": {
+    "SENSOR_MAGIC": "0x46524d31",
+    "SENSOR_VERSION": 2,
+    "SAMPLE_BANK": 64
+  },
+  "structs": {
+    "Vec3": {
+      "description": "A single 3-axis reading in SI units.",
+      "fields": [
+        {
+          "name": "x",
+          "type": "float32",
+          "description": "acceleration X (m/s^2)"
+        },
+        {
+          "name": "y",
+          "type": "float32",
+          "description": "acceleration Y (m/s^2)"
+        },
+        {
+          "name": "z",
+          "type": "float32",
+          "description": "acceleration Z (m/s^2)"
+        }
+      ]
+    }
+  },
+  "fields": [
+    {
+      "name": "magic",
+      "type": "uint32",
+      "description": "file magic 'FRM1'",
+      "value": "SENSOR_MAGIC"
+    },
+    {
+      "name": "version",
+      "type": "uint16",
+      "description": "format version",
+      "value": "SENSOR_VERSION"
+    },
+    {
+      "name": "state",
+      "type": "uint8",
+      "description": "current acquisition state",
+      "value": 1,
+      "enum": {
+        "0": "idle",
+        "1": "active",
+        "2": "fault"
+      }
+    },
+    {
+      "name": "flags",
+      "type": "uint8",
+      "description": "packed status bits",
+      "value": {
+        "enabled": 1,
+        "mode": 2,
+        "reserved": 0
+      },
+      "bits": [
+        {
+          "name": "enabled",
+          "width": 1,
+          "description": "acquisition running"
+        },
+        {
+          "name": "mode",
+          "width": 3,
+          "description": "0=raw 1=filtered 2=fused",
+          "enum": {
+            "0": "raw",
+            "1": "filtered",
+            "2": "fused"
+          }
+        },
+        {
+          "name": "reserved",
+          "width": 4,
+          "description": "must be zero"
+        }
+      ]
+    },
+    {
+      "name": "sample_count",
+      "type": "uint16",
+      "description": "logical number of valid samples in the bank",
+      "value": 64
+    },
+    {
+      "name": "temps",
+      "type": "int16[4]",
+      "description": "board temperatures, 0.1 C units, one per quadrant",
+      "value": [
+        "ramp",
+        -20,
+        10
+      ]
+    },
+    {
+      "name": "text",
+      "type": "char[32]",
+      "value": ""
+    },
+    {
+      "name": "label",
+      "type": "char[16]",
+      "description": "human-readable frame label",
+      "value": "sensor-01"
+    },
+    {
+      "name": "reserved0",
+      "type": "uint16",
+      "reserved": true,
+      "description": "reserved header word — do not use"
+    },
+    {
+      "name": "reserved1",
+      "type": "bytes",
+      "size": 8,
+      "reserved": true,
+      "description": "reserved for future header fields"
+    },
+    {
+      "name": "samples",
+      "type": "Vec3[64]",
+      "description": "fixed sample bank; cycles the three basis vectors",
+      "value": [
+        "repeat",
+        {
+          "x": 1,
+          "y": 0,
+          "z": 0
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        }
+      ]
+    }
+  ]
+}
