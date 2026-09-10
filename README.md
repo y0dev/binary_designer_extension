@@ -1,225 +1,58 @@
-<img src="media/icon.png" alt="Binary File Designer" width="96" align="left" hspace="12" />
-
 # Binary File Designer
 
-A VS Code extension for **designing** binary structures and **generating artifacts**
-from the design — a sample binary, a C header, and a layout document.
+Design binary structures in VS Code: a form / tree editor for a `*.design.json`
+file that **produces artifacts** from the design — a sample `.bin`, a C header,
+and a layout document — for firmware, EEPROM / flash images, device-config
+blobs, wire protocols and other fixed-layout binary formats.
 
-<br clear="left" />
+It is the design-time counterpart to a binary *viewer*: instead of decoding an
+existing file against a format, you lay out the structure and the extension
+generates from it. Built on the VS Code **Custom Editor API**; the layout
+engine, validator and generators are a pure, unit-tested core with no `vscode`
+dependency, and nothing in a design is ever executed.
 
+## Form editor
 
-It is the design-time counterpart to a binary *viewer*: instead of opening a
-`.bin` and decoding it against a format, you lay out a structure in a form editor
-and the extension produces files from it.
+A tree editor for the design: add fields, arrays, enums, bitfields and reusable
+structs; a type combo (scalars + composites + struct names + free-typed
+shorthand); inline `enum` (value → label) and bitfield (name : width) tables;
+drag a row's grip to reorder, duplicate a row, move in / out of structs. A
+**JSON tab** edits the whole design as text and is auto-selected when the tree
+can't represent it losslessly (multi-dimensional arrays). A live **layout
+preview** shows `Offset · Name · C type · Size` computed under the design's
+`packing` and `endianness`, with the total size and every padding byte the
+packer inserts.
 
-![The form editor and a generated layout preview](media/editor-screenshot.png)
+![The form editor with the live layout preview](docs/images/form-editor.png)
 
----
+## Binary tab
 
-## What you get
+The sample binary this design would emit, rendered as a classic
+`Offset · Hex · ASCII` dump with each top-level field's bytes colour-coded.
+Hover a byte, a field chip or a layout-preview row and the other two
+cross-highlight. An **Add** palette (`u8 … f64`, `char[16]`, `bytes[4]`, `enum`,
+`array`, `struct`, `reserve u32`, `reserve[16]`, and every reusable struct)
+appends a field on click or, dragged onto a byte, inserts it there. Drag an
+existing field — its chip or its highlighted bytes — onto another to reorder the
+top-level struct; drop on the end zone to move it last. Every edit is written
+straight back to the `.design.json`, the hex re-emits, and the generated header
+and layout doc follow.
 
-| Piece | Description |
-| ----- | ----------- |
-| **Form / JSON / Binary editor** | A tree editor for a `*.design.json` file: add fields, arrays, enums, bitfields and reusable structs; a type combo box; inline enum/bitfield tables; drag a row's grip to reorder; a live **layout preview** (offset · name · C type · size, plus total size and packer padding). A **JSON tab** edits the whole design as text; auto-selected when the form can't losslessly represent the design. |
-| **Binary tab** | A live hex dump of the sample binary this design would generate — every field's bytes colour-coded, hover to cross-highlight the layout row, ASCII gutter. An **Add** palette (`u8 … f64`, `char[16]`, `bytes[4]`, `enum`, `array`, `struct`, and every reusable struct): click to append a field, or drag it onto a byte to insert it there. **Drag an existing field** (its coloured chip, or its highlighted bytes) onto another to reorder; drop on the end zone to move it last. Every edit writes straight back to the `.design.json`. |
-| **Generate Sample Binary** | Walks the design and writes `<name>.bin` using each field's `value` (or a sensible default), honoring `packing` and per-field endianness. Reports the byte count and any defaulted fields, and offers a **round-trip check**. |
-| **Generate C Header** | Emits `<name>.h` with `#pragma pack`, typedef'd structs/enums/bitfields in dependency order, and a `_Static_assert` on `sizeof` so layout drift fails the compile. Also writes `<name>_layout.md`. |
-| **Generate Layout Doc** | Writes just `<name>_layout.md` — the offset table. |
-| **Designs view** | An Activity Bar view that lists every `*.design.json` in the workspace (with size / error count); a file watcher keeps it current. |
+![The Binary tab: colour-coded hex dump with the Add palette and a reserved slot](docs/images/binary-tab.png)
 
-Nothing in a design is ever executed. Sample values use a fixed, tiny expression
-vocabulary (`const`, `ramp`, `repeat`, `random`) evaluated by hand-written code.
+## Generators
 
-### Binary tab
+Three commands, each with a *do not edit / regenerate from `<source>`* banner:
 
-![The Binary tab: colour-coded hex dump with draggable field chips](media/binary-tab.png)
-
-The **Binary** tab renders the sample binary this design would generate. Each
-top-level field's bytes are tinted with a stable per-name colour; hovering a
-field chip, a byte run, or a layout-preview row cross-highlights the other two.
-
-- **Add a field** — click a type in the **Add** row (`u8 … f64`, `char[16]`,
-  `bytes[4]`, `enum`, `array`, `struct`, `reserve u32`, `reserve[16]`, or any
-  reusable struct) to append it, or drag it onto a byte to splice it in
-  before/after that field. New fields get an auto name and a zero/empty default;
-  tweak them in the Form or JSON tab.
-- **Reserve space for the future** — the `reserve` palette entries (or the `rsv`
-  toggle on any Form row) mark a field `reserved`. It still occupies its exact
-  size and offset and is zero-filled, but it renders hatched, is excluded from
-  the "defaulted" count, and the C header / layout doc label it *reserved*.
-- **Reorder** — drag a field's chip or its highlighted bytes onto another field;
-  drop on the dashed zone to move it last. The same reordering is in the Form
-  tree via each row's `⠿` grip.
-
-Every edit is written straight back to the `.design.json`, the hex re-emits, and
-the generated C header / layout follow.
-
----
-
-## Getting started
-
-```bash
-npm install
-npm run compile       # esbuild bundle -> dist/extension.js, then tsc type-check
-npm run watch         # incremental esbuild
-npm run check-types   # tsc -p tsconfig.json && tsc -p tsconfig.webview.json
-npm run lint          # eslint src
-npm test              # 45 Mocha unit tests: layout, validator, emitter<->parser, header golden
-npm run example       # regenerate examples/generated/* from examples/SensorFrame.design.json
-npm run package       # -> binary-file-designer-<version>.vsix  (via @vscode/vsce)
-```
-
-Press <kbd>F5</kbd> to launch an Extension Development Host with the `examples/`
-folder open. Open `SensorFrame.design.json` and it opens in the form editor.
-
-### Build layout
-
-| Path | Role |
-| ---- | ---- |
-| `esbuild.js` | bundles `src/extension.ts` → `dist/extension.js` (the only file that ships as code) |
-| `tsconfig.json` | type-check of `src/` (`noEmit`) |
-| `tsconfig.webview.json` | `checkJs` pass over `media/*.js` |
-| `tsconfig.test.json` | emits `src/` + `test/` to `out/` for Mocha |
-| `.mocharc.json` | Mocha, TDD interface, `out/test/unit/**/*.test.js` |
-| `scripts/check-node.js` | `preinstall` Node ≥ 18 guard |
-| `scripts/clean-vsix.js` | drops stale `.vsix` before `npm run package` |
-
-### Commands (Command Palette → "Binary Designer:")
-
-- **Create Design** — scaffolds a new `*.design.json` and opens the editor.
-- **Generate Sample Binary**
-- **Generate C Header**
-- **Generate Layout Doc**
-- **Round-trip Check** — emit, re-parse, assert every field reads back what was written.
-
-All generators also appear on the right-click menu of a `*.design.json` file and
-in the Designs view.
-
-### Settings
-
-| Setting | Default | Meaning |
-| ------- | ------- | ------- |
-| `binaryDesigner.outputFolder` | `""` | Where generated files go (relative to the workspace root). Empty = next to the design file. |
-| `binaryDesigner.defaultPacking` | `1` | `packing` used when a design omits it. |
-| `binaryDesigner.header.staticAssert` | `true` | Emit `_Static_assert(sizeof(...) == N)`. |
-| `binaryDesigner.header.includeStyle` | `angle` | `#include <stdint.h>` vs `"stdint.h"`. |
-| `binaryDesigner.header.enumTypedefForFields` | `false` | Declare enum fields with the generated enum typedef instead of their integer type. |
-| `binaryDesigner.header.arrayMax` | `0` | Fixed `[MAX]` capacity for `array.countField` members (0 = prompt). |
-| `binaryDesigner.identifierAutoFix` | `true` | Offer one-click "fix name" actions in the editor. |
-
----
-
-## The Design schema
-
-A design is a JSON object saved as `Something.design.json`.
-
-```jsonc
-{
-  "name": "SensorFrame",       // required; a valid C identifier — becomes the top-level struct
-  "endianness": "little",      // "little" | "big"; default "little"
-  "packing": 1,                // 1 | 2 | 4 | 8; default 1
-  "description": "…",
-  "constants": {               // named constants usable as a field "value"
-    "SENSOR_MAGIC": "0x46524d31",
-    "SENSOR_VERSION": 2
-  },
-  "structs": {                 // reusable nested structs, keyed by C identifier
-    "Vec3": { "fields": [
-      { "name": "x", "type": "float32" },
-      { "name": "y", "type": "float32" },
-      { "name": "z", "type": "float32" }
-    ] }
-  },
-  "fields": [ /* Field[] — the top-level struct body */ ]
-}
-```
-
-### Field
-
-```jsonc
-{
-  "name": "sample_count",      // required; unique among siblings; valid C identifier
-  "type": "uint16",            // see Types; or a struct name; or "<base>[<n>]"
-  "description": "…",
-  "value": 0,                  // design-time default for the sample binary
-  "offset": 0,                 // optional; usually omit and let packing/order decide
-  "endianness": "big",         // optional per-field override
-  "size": 16,                  // byte length for bytes/padding/ascii/utf8/utf16
-
-  "array": { "count": 8 },                       // fixed array; OR
-  "array": { "countField": "sample_count" },     // length-prefixed (count = value of an earlier field)
-
-  "enum": { "0": "IDLE", "1": "ACTIVE" },        // integer -> C enum typedef; field keeps its int type
-
-  "bits": [                                      // this integer container is split into named bit-slices
-    { "name": "enabled", "width": 1 },
-    { "name": "mode", "width": 3, "enum": { "0": "off", "1": "on" } },
-    { "name": "reserved", "width": 4 }
-  ],
-
-  "reserved": true              // a slot held for future use: normal size/offset, zero-filled unless
-                                // a `value` is given, never reported as "defaulted", annotated in the
-                                // C header and layout doc. Use it for a reserved word or a padding
-                                // block (`{ "type": "bytes", "size": 16, "reserved": true }`).
-}
-```
-
-### Types
-
-| Category | Values |
-| -------- | ------ |
-| Integers | `uint8 int8 uint16 int16 uint32 int32 uint64 int64` |
-| Floats | `float32` (`float`), `float64` (`double`) |
-| Bytes / opaque | `bytes` (needs `size`), `padding` (needs `size`) |
-| Strings | `char[N]` (fixed, NUL-padded), `ascii`, `utf8` (byte length), `utf16` |
-| Composite | `struct` (inline `fields`), a **struct name** from `structs`, `array` (`array` + `items`) |
-| Shorthand | any type may be written `float32[8]`, `int16[24]`, `Vec3[64]`, `char[16]`; multi-dim via `int16[4][3]` or nested `array`+`items` |
-
-### Sample values
-
-`value` is a JSON literal, a constant name, or a **1-line expression** for arrays:
-
-| Expression | Meaning |
-| ---------- | ------- |
-| `["const", v]` | every element = `v` |
-| `["ramp", start, step?]` | `start, start+step, start+2·step, …` (step defaults to 1) |
-| `["repeat", a, b, …]` | the listed values, cycled to fill the array |
-| `["random", seed]` | a deterministic mulberry32 stream (ints `0..255`, or `[0,1)` for floats) |
-
-For a struct array, `["repeat", {…}, {…}]` cycles whole struct literals.
-Bitfield values are an object: `"value": { "enabled": 1, "mode": "on" }`.
-
----
-
-## Identifier rules
-
-Every `name` that becomes a C identifier — the design name, struct keys, field
-names, enum labels, bit names, constants — is validated by the pure, unit-tested
-`validateIdentifier(name, kind)` → `{ ok, message?, suggestion? }`:
-
-- must match `^[A-Za-z_][A-Za-z0-9_]*$`;
-- must not be a C/C++ keyword or a standard typedef (`int`, `struct`, `new`,
-  `uint8_t`, `size_t`, …) — explicit deny-list;
-- must not start with `_` + uppercase, or contain `__` (reserved for the
-  implementation);
-- constants / enum labels are hinted toward `UPPER_SNAKE_CASE`;
-- field names unique within a struct; struct/enum tags unique after prefixing.
-
-The validator runs live in the editor (red inline on the offending row) **and
-again, hard, before either generator runs — generation is blocked on invalid
-names, not just warned.** `sanitizeIdentifier` produces the one-click fix.
-
----
-
-## Worked example — `examples/SensorFrame.design.json`
-
-`npm run example` (or the commands in VS Code) produces:
-
-### `SensorFrame.bin` — 802 bytes, round-trip verified
-
-Every leaf value read back exactly what was written (204 leaves checked).
-
-### `SensorFrame.h` — compiles clean with `gcc -std=c11 -Wall -Werror -Wextra -pedantic`
+- **Generate Sample Binary** walks the design and writes `<name>.bin` from each
+  field's `value` (or a sensible default), honouring `packing` and per-field
+  endianness. It reports the byte count and any defaulted fields and offers a
+  round-trip check.
+- **Generate C Header** emits `<name>.h` with `#pragma pack`, typedef'd
+  structs / enums / bitfields in dependency order, and a `_Static_assert` on
+  `sizeof` so layout drift fails the compile.
+- **Generate Layout Doc** writes `<name>_layout.md` — the offset table on its
+  own.
 
 ```c
 /* Generated by Binary File Designer — do not edit. Regenerate from SensorFrame.design.json. */
@@ -249,86 +82,197 @@ typedef struct SensorFrame_flags {
 } SensorFrame_flags;
 
 typedef struct SensorFrame {
-    uint32_t          magic;         /* file magic 'FRM1' */
-    uint16_t          version;       /* format version */
-    uint8_t           state;         /* current acquisition state */
-    SensorFrame_flags flags;
-    uint16_t          sample_count;  /* logical number of valid samples in the bank */
-    int16_t           temps[4];      /* board temperatures, 0.1 C units, one per quadrant */
-    Vec3              samples[64];   /* fixed sample bank; cycles the three basis vectors */
-    char              label[16];     /* human-readable frame label */
+    uint32_t          magic;          /* file magic 'FRM1' */
+    uint16_t          version;        /* format version */
+    uint8_t           state;          /* current acquisition state */
+    SensorFrame_flags flags;          /* packed status bits */
+    uint16_t          reserved0;      /* reserved header word — do not use */
+    uint16_t          sample_count;   /* logical number of valid samples in the bank */
+    int16_t           temps[4];       /* board temperatures, 0.1 C units, one per quadrant */
+    char              label[16];      /* human-readable frame label */
+    uint8_t           reserved1[12];  /* reserved for future header fields */
+    Vec3              samples[64];    /* fixed sample bank; cycles the three basis vectors */
 } SensorFrame;
 
 #pragma pack(pop)
 
-_Static_assert(sizeof(SensorFrame) == 802, "SensorFrame layout drift");
+_Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
 
 #endif /* SENSOR_FRAME_H */
 ```
 
-### `SensorFrame_layout.md`
+## What you get
 
-| Offset | Name | C type | Size |
-| -----: | ---- | ------ | ---: |
-| 0 | `magic` | `uint32_t` | 4 |
-| 4 | `version` | `uint16_t` | 2 |
-| 6 | `state` | `uint8_t` | 1 |
-| 7 | `flags` | `uint8_t` | 1 |
-| 8 | `sample_count` | `uint16_t` | 2 |
-| 10 | `temps` | `int16_t[4]` | 8 |
-| 18 | `samples` | `Vec3[64]` | 768 |
-| 786 | `label` | `char[16]` | 16 |
+- **Form / JSON / Binary tabs** — a tree editor for the design, a raw-JSON tab
+  (auto-selected when the tree can't represent the design losslessly), and a
+  live hex dump of the sample binary; edits round-trip between all three.
+- **Tree editor** — fields, arrays, enums, bitfields and reusable structs; a
+  type combo; inline `enum` (value → label) and bitfield (name : width) tables;
+  drag a row's `⠿` grip to reorder; duplicate, move in / out of structs.
+- **Layout preview** — `Offset · Name · C type · Size` under the design's
+  `packing` and `endianness`, with the total size and every packer-inserted
+  padding byte.
+- **Binary tab** — the sample binary as an `Offset · Hex · ASCII` dump, each
+  field's bytes colour-coded; hover a byte, a field chip or a layout row to
+  cross-highlight the other two.
+- **Add fields from the hex view** — an Add palette (`u8 … f64`, `char[16]`,
+  `bytes[4]`, `enum`, `array`, `struct`, `reserve u32`, `reserve[16]`, every
+  reusable struct); click to append or drag onto a byte to insert there.
+- **Drag to rearrange** — drag a field's chip or its highlighted bytes onto
+  another field to reorder the top-level struct; the `.design.json`, the hex and
+  the generated header all follow.
+- **Reserved slots** — mark a field `"reserved": true` (the palette entries or
+  the `rsv` toggle) to hold space for the future: it keeps its size and offset,
+  is zero-filled, is left out of the "defaulted" report, renders hatched, and is
+  labelled *reserved* in the header and layout doc.
+- **Types** — `uint8 … int64`, `float32` / `float64`, `char[N]`, `bytes` /
+  `padding`, `ascii` / `utf8` / `utf16`, inline `struct`, reusable struct names,
+  `array`; shorthand `<base>[<n>]` and multi-dimensional `int16[4][3]`.
+- **Reusable structs** — define a layout once under `structs`, then use its name
+  as a field or array-element type (`"Vec3"`, `"Vec3[64]"`); emitted in
+  dependency order in the header.
+- **Length-prefixed arrays** — `"countField": "n"` sizes an array from an
+  earlier integer field's value instead of a fixed `count`.
+- **Constants** — a named-constant map usable as a field `value`
+  (`"value": "MAGIC"`), hex strings included.
+- **Sample values** — a JSON literal, a constant name, or a tiny
+  non-Turing-complete expression: `["const", v]`, `["ramp", start, step?]`,
+  `["repeat", …]`, `["random", seed]`; struct arrays take struct literals.
+- **Identifier validation** — every name that becomes a C identifier is checked
+  live and again, hard, before generation: `^[A-Za-z_]\w*$`, no C / C++ keyword
+  or `stdint` typedef, no leading `_Upper` or `__`; a one-click *fix name*
+  snake-cases and de-dupes. `validateIdentifier(name, kind)` is a pure,
+  unit-tested module.
+- **Round-trip check** — re-parse the generated bytes against the design and
+  assert every field reads back exactly what was written.
+- **Designs view** — an Activity Bar list of every `*.design.json` in the
+  workspace (size / error count), kept live by a file watcher.
+- **Pure, tested core** — `src/core/` (layout engine, `validateDesign`,
+  `validateIdentifier`, the emitters, the parser) has no `vscode` dependency and
+  is covered by 50 Mocha tests, including golden C headers verified to compile
+  under `-Wall -Werror -Wextra -pedantic`.
+- Native VS Code look — theme variables throughout, so light, dark and
+  high-contrast all work.
 
-Total: **802 bytes**, packing 1, 0 padding bytes.
+Design-time only — nothing in a `.design.json` is ever executed; the
+sample-value expression vocabulary is a fixed enum evaluated by hand-written
+code, and the header generator only emits, it never imports `.h`.
 
----
+## Getting started
 
-## Architecture
+1. Run **Binary Designer: Create Design** (Command Palette) to scaffold a new
+   `*.design.json`, or open an existing one — it opens in the form editor, not a
+   text editor.
+2. Lay out the top-level struct in the **Form** tab; watch the **layout
+   preview** for offsets, size and padding.
+3. Switch to the **Binary** tab to see the bytes, add fields from the **Add**
+   palette, and drag fields to reorder.
+4. Run **Binary Designer: Generate C Header** (and **Generate Sample Binary** /
+   **Generate Layout Doc**) from the palette, the editor toolbar, the Designs
+   view, or the Explorer right-click menu.
 
+### The design schema
+
+A design is a plain JSON object saved as `Something.design.json`. There is no
+expression language and nothing in it is executed.
+
+```jsonc
+{
+  "name": "SensorFrame",       // required; a valid C identifier — the top-level struct
+  "endianness": "little",      // "little" | "big"; default "little"
+  "packing": 1,                // 1 | 2 | 4 | 8; default 1
+  "description": "…",
+  "constants": {               // named constants usable as a field "value"
+    "SENSOR_MAGIC": "0x46524d31",
+    "SENSOR_VERSION": 2
+  },
+  "structs": {                 // reusable nested structs, keyed by C identifier
+    "Vec3": { "fields": [
+      { "name": "x", "type": "float32" },
+      { "name": "y", "type": "float32" },
+      { "name": "z", "type": "float32" }
+    ] }
+  },
+  "fields": [
+    { "name": "magic",   "type": "uint32", "value": "SENSOR_MAGIC" },
+    { "name": "version", "type": "uint16", "value": "SENSOR_VERSION" },
+    {
+      "name": "state", "type": "uint8", "value": 1,
+      "enum": { "0": "idle", "1": "active", "2": "fault" }
+    },
+    {
+      "name": "flags", "type": "uint8",
+      "value": { "enabled": 1, "mode": 2 },
+      "bits": [
+        { "name": "enabled",  "width": 1 },
+        { "name": "mode",     "width": 3, "enum": { "0": "raw", "1": "filtered" } },
+        { "name": "reserved", "width": 4 }
+      ]
+    },
+    { "name": "reserved0", "type": "uint16", "reserved": true },
+    { "name": "sample_count", "type": "uint16", "value": 64 },
+    { "name": "temps", "type": "int16[4]", "value": ["ramp", -20, 10] },
+    { "name": "label", "type": "char[16]", "value": "sensor-01" },
+    {
+      "name": "samples", "type": "Vec3[64]",
+      "value": ["repeat", { "x": 1, "y": 0, "z": 0 }, { "x": 0, "y": 1, "z": 0 }]
+    }
+  ]
+}
 ```
-src/core/     pure, no `vscode` — unit-tested with Mocha
-  types.ts          the Design data model
-  identifiers.ts    validateIdentifier, deny-list, sanitizeIdentifier, toUpperSnake
-  typeUtil.ts       scalar tables + type-string / shorthand parsing
-  layout.ts         the layout engine (offset / size / padding per C rules)
-  validate.ts       validateDesign -> { ok, errors, warnings, formRepresentable }
-  codec.ts          scalar read/write + per-field "element plan"
-  emitBinary.ts     the sample-binary emitter
-  parseBinary.ts    the round-trip parser + roundTripCheck
-  emitHeader.ts     the C-header emitter (dependency-ordered typedefs)
-  emitLayoutDoc.ts  the Markdown layout doc
 
-src/editor/    the webview form/JSON editor (CustomTextEditorProvider)
-src/commands/  Create Design, Generate Binary / Header / Layout Doc, Round-trip Check
-src/views/     the "Designs" tree + file watcher
-src/util/      workspace / target-resolution helpers
-media/         editor.js / editor.css / icon.svg  (vanilla, CSP-locked webview)
+A field's `array: { "count": 8 }` (fixed) or `array: { "countField": "n" }`
+(length-prefixed) wraps any type; `size` is required for `bytes` / `padding` /
+`ascii` / `utf8` / `utf16`; `offset` pins an explicit offset; `endianness`
+overrides per field; `reserved: true` marks a future-use slot.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| Binary Designer: Create Design | scaffold a new `*.design.json` and open it in the form editor |
+| Binary Designer: Generate Sample Binary | walk the design → `<name>.bin`; report bytes + defaulted fields; offer a round-trip check |
+| Binary Designer: Generate C Header | `<name>.h` (+ `<name>_layout.md`) — `#pragma pack`, typedef'd structs / enums / bitfields, `_Static_assert` on `sizeof` |
+| Binary Designer: Generate Layout Doc | just `<name>_layout.md` — the offset table |
+| Binary Designer: Round-trip Check | emit → re-parse → assert every field reads back what was written |
+| Binary Designer: Open Design | open a `*.design.json` in the form editor |
+
+Generators also appear on the editor toolbar, the Designs-view context menu, and
+the Explorer right-click menu for a `*.design.json`.
+
+## Settings
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `binaryDesigner.outputFolder` | `""` | Folder for generated artifacts, relative to the workspace root; empty = next to the design file |
+| `binaryDesigner.defaultPacking` | `1` | Struct packing (bytes) used when a design omits `packing` |
+| `binaryDesigner.header.staticAssert` | `true` | Emit `_Static_assert(sizeof(...) == N)` so layout drift fails the compile |
+| `binaryDesigner.header.includeStyle` | `angle` | `#include <stdint.h>` vs `"stdint.h"` |
+| `binaryDesigner.header.enumTypedefForFields` | `false` | Declare enum fields with the generated enum typedef instead of their integer type |
+| `binaryDesigner.header.arrayMax` | `0` | Fixed `[MAX]` capacity for `array.countField` members in the header (`0` = prompt) |
+| `binaryDesigner.identifierAutoFix` | `true` | Offer one-click *fix name* actions for invalid C identifiers in the editor |
+
+## Building from source
+
+```bash
+npm install
+npm run compile       # esbuild bundle -> dist/extension.js, then tsc type-check
+npm run watch         # incremental esbuild
+npm run check-types   # tsc -p tsconfig.json && tsc -p tsconfig.webview.json
+npm run lint          # eslint src
+npm test              # 50 Mocha unit tests: layout, validator, emitter <-> parser, header golden
+npm run example       # regenerate examples/generated/* from examples/SensorFrame.design.json
+npm run package       # -> binary-file-designer-<version>.vsix (via @vscode/vsce)
 ```
 
-### Tests (`npm test`)
+Press <kbd>F5</kbd> for an Extension Development Host with `examples/` open. The
+extension bundles to a single `dist/extension.js`; `src/core/` is pure and
+type-checked separately from the CSP-locked webview scripts in `media/`.
 
-- **layout** — offsets/size/padding vs. hand-computed C `sizeof`/`offsetof` for a
-  matrix of packings (1/2/4/8) and types (scalars, `char[]`, `bytes`, nested
-  structs, bitfields, `countField`, explicit offset, multi-dim).
-- **validate** — bad names, unknown types, duplicate siblings, bitfield overflow,
-  forward `countField`, recursion, `formRepresentable`.
-- **emit ↔ parse** — every scalar type in both endiannesses, `ramp`/`repeat`/
-  `const`, strings, bitfields (LSB-first), struct arrays, length-prefixed arrays,
-  and the full `SensorFrame`.
-- **identifier validator** — keyword list, `__`, leading `_Upper`, digits-first,
-  empty, unicode, collisions.
-- **header golden** — `SensorFrame.h` / `_layout.md` against checked-in goldens,
-  plus inline-struct typedefs, enum prefixes, FAM-vs-`[MAX]`, `--no-static-assert`,
-  dependency ordering.
+## Author
 
----
-
-## Non-goals / guardrails
-
-- **No code execution.** The sample-value vocabulary is a fixed enum evaluated by
-  hand-written code.
-- **Not a C parser.** The header generator only emits; it never imports `.h`.
-- Generated files carry a "do not edit / regenerate from `<source>`" banner.
+Devontae Reid — [www.devontaereid.com](https://www.devontaereid.com) ·
+[github.com/y0dev/binary_designer_extension](https://github.com/y0dev/binary_designer_extension)
 
 ## License
 

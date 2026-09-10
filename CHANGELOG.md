@@ -15,6 +15,14 @@
 - **Drag-to-reorder** the top-level struct: drag a field's chip or its
   highlighted bytes in the Binary tab, or a row's grip in the Form tree.
 
+### Fixed
+
+- Form fields (constant name, struct name, field type, array `count` /
+  `countField`, enum key) no longer lose focus after a keystroke: renames and
+  type edits now commit on blur / Enter, and the "is this our own edit?" check
+  tolerates VS Code's CRLF / final-newline normalization instead of forcing a
+  full form rebuild.
+
 ## 0.1.0
 
 Initial release.

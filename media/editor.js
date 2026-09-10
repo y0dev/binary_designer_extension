@@ -104,10 +104,21 @@
     state.defaulted = msg.defaulted || [];
     state.bytes = msg.bytesB64 ? b64ToBytes(msg.bytesB64) : null;
 
-    const isEcho = msg.text === state.lastApplied;
+    // Decide whether this update is an echo of an edit WE just made. Exact text
+    // compare is not enough: VS Code may normalise EOLs (CRLF on Windows) or
+    // final-newline settings, which would make our own change look external and
+    // trigger a full form rebuild — stealing focus mid-keystroke. So fall back
+    // to a semantic (parsed-model) comparison.
+    const norm = (s) => String(s == null ? '' : s).replace(/\r\n/g, '\n');
+    let isEcho = norm(msg.text) === norm(state.lastApplied);
     if (!isEcho) {
       try {
-        state.model = JSON.parse(msg.text);
+        const incoming = JSON.parse(msg.text);
+        if (state.model && JSON.stringify(incoming) === JSON.stringify(state.model)) {
+          isEcho = true; // same design; only whitespace / EOL differs from our edit
+        } else {
+          state.model = incoming;
+        }
       } catch (e) {
         // leave model as-is; JSON tab shows the raw text and parse error
       }
@@ -633,15 +644,21 @@
     for (const key of Object.keys(consts)) {
       cfs.appendChild(el('div', { class: 'kv-row' }, [
         textInput(key, (v) => mutate((d) => {
-          const val = d.constants[key]; delete d.constants[key]; d.constants[v || key] = val;
-        }, true), { placeholder: 'NAME' }),
+          if (!v || v === key) return;
+          const val = d.constants[key]; delete d.constants[key]; d.constants[v] = val;
+        }, true), { placeholder: 'NAME', commit: true }),
         textInput(valueToInput(consts[key]), (v) => mutate((d) => { d.constants[key] = parseValueInput(v); }), { placeholder: '0 or 0x…' }),
         iconBtn('✕', 'remove', () => mutate((d) => { delete d.constants[key]; }, true)),
       ]));
     }
     cfs.appendChild(el('button', {
       text: '+ constant',
-      onclick: () => mutate((d) => { d.constants = d.constants || {}; d.constants['NEW_CONST'] = 0; }, true),
+      onclick: () => mutate((d) => {
+        d.constants = d.constants || {};
+        let k = 'NEW_CONST'; let i = 1;
+        while (d.constants[k] !== undefined) k = 'NEW_CONST_' + (++i);
+        d.constants[k] = 0;
+      }, true),
     }));
     root.appendChild(cfs);
 
@@ -655,7 +672,7 @@
         textInput(key, (v) => mutate((d) => {
           if (!v || v === key) return;
           const def = d.structs[key]; delete d.structs[key]; d.structs[v] = def;
-        }, true), { cls: isBadId(key) ? 'invalid' : '' }),
+        }, true), { cls: isBadId(key) ? 'invalid' : '', commit: true }),
         iconBtn('✕', 'delete struct', () => mutate((d) => { delete d.structs[key]; }, true)),
       ]));
       const sd = structs[key];
@@ -763,7 +780,7 @@
       cls: 'name' + (isBadId(field.name) ? ' invalid' : ''), placeholder: 'name',
     }));
 
-    const typeInput = textInput(field.type || '', (v) => mutate(() => { field.type = v; }, true), { placeholder: 'type', list: 'type-options' });
+    const typeInput = textInput(field.type || '', (v) => mutate(() => { field.type = v; }, true), { placeholder: 'type', list: 'type-options', commit: true });
     main.appendChild(typeInput);
 
     main.appendChild(textInput(
@@ -820,12 +837,12 @@
       bar.appendChild(textInput(a.count != null ? String(a.count) : '', (v) => mutate(() => {
         a.count = v === '' ? undefined : parseInt(v, 10);
         if (a.count != null) delete a.countField;
-      }, true), { type: 'number' }));
+      }, true), { type: 'number', commit: true }));
       bar.appendChild(el('label', { text: 'countField' }));
       bar.appendChild(textInput(a.countField || '', (v) => mutate(() => {
         a.countField = v || undefined;
         if (a.countField) delete a.count;
-      }, true)));
+      }, true), { commit: true }));
       bar.appendChild(iconBtn('✕', 'remove array', () => mutate(() => { delete field.array; }, true)));
       box.appendChild(bar);
     }
@@ -836,8 +853,9 @@
       for (const k of Object.keys(field.enum)) {
         t.appendChild(el('div', { class: 'enum-row' }, [
           textInput(k, (v) => mutate(() => {
-            const lbl = field.enum[k]; delete field.enum[k]; field.enum[v || k] = lbl;
-          }, true), { type: 'number', placeholder: 'int' }),
+            if (!v || v === k || field.enum[v] !== undefined) return;
+            const lbl = field.enum[k]; delete field.enum[k]; field.enum[v] = lbl;
+          }, true), { type: 'number', placeholder: 'int', commit: true }),
           textInput(field.enum[k], (v) => mutate(() => { field.enum[k] = v; }), { placeholder: 'LABEL', cls: isBadId(field.enum[k]) ? 'invalid' : '' }),
           iconBtn('✕', 'remove', () => mutate(() => { delete field.enum[k]; }, true)),
         ]));
@@ -889,6 +907,14 @@
   }
 
   // ---- input factories ----
+  //
+  // Two modes:
+  //  - default: fire `onChange` on a debounced `input` (live) AND on `change`.
+  //    The caller MUST NOT rebuild the form from this handler, or focus is lost.
+  //  - opts.commit: fire `onChange` ONLY when the edit is committed (blur / Enter
+  //    / picking a datalist option). Use this for anything that renames an
+  //    object key or otherwise needs the caller to rebuild the tree — the
+  //    rebuild then happens after focus has already left the input.
   function textInput(value, onChange, opts) {
     opts = opts || {};
     const n = el('input', {
@@ -899,6 +925,13 @@
       list: opts.list || undefined,
       disabled: opts.disabled,
     });
+    if (opts.commit) {
+      n.addEventListener('change', () => {
+        if (n.value !== value) onChange(n.value);
+      });
+      n.addEventListener('keydown', (e) => { if (e.key === 'Enter') n.blur(); });
+      return n;
+    }
     let t = 0;
     n.addEventListener('input', () => {
       clearTimeout(t);

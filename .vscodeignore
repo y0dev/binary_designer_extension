@@ -6,6 +6,7 @@ test/**
 out/**
 scripts/**
 docs/**
+!docs/images/**
 node_modules/**
 esbuild.js
 .eslintrc.json

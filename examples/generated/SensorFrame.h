@@ -25,21 +25,20 @@ typedef struct SensorFrame_flags {
 } SensorFrame_flags;
 
 typedef struct SensorFrame {
-    uint32_t          magic;         /* file magic 'FRM1' */
-    uint16_t          version;       /* format version */
-    uint8_t           state;         /* current acquisition state */
-    SensorFrame_flags flags;         /* packed status bits */
-    uint16_t          sample_count;  /* logical number of valid samples in the bank */
-    int16_t           temps[4];      /* board temperatures, 0.1 C units, one per quadrant */
-    char              text[32];
-    char              label[16];     /* human-readable frame label */
-    uint16_t          reserved0;     /* reserved header word — do not use */
-    uint8_t           reserved1[8];  /* reserved for future header fields */
-    Vec3              samples[64];   /* fixed sample bank; cycles the three basis vectors */
+    uint32_t          magic;          /* file magic 'FRM1' */
+    uint16_t          version;        /* format version */
+    uint8_t           state;          /* current acquisition state */
+    SensorFrame_flags flags;          /* packed status bits */
+    uint16_t          reserved0;      /* reserved header word — do not use */
+    uint16_t          sample_count;   /* logical number of valid samples in the bank */
+    int16_t           temps[4];       /* board temperatures, 0.1 C units, one per quadrant */
+    char              label[16];      /* human-readable frame label */
+    uint8_t           reserved1[12];  /* reserved for future header fields */
+    Vec3              samples[64];    /* fixed sample bank; cycles the three basis vectors */
 } SensorFrame;
 
 #pragma pack(pop)
 
-_Static_assert(sizeof(SensorFrame) == 844, "SensorFrame layout drift");
+_Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
 
 #endif /* SENSOR_FRAME_H */

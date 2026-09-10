@@ -2,7 +2,7 @@
   "name": "SensorFrame",
   "endianness": "little",
   "packing": 1,
-  "description": "A telemetry frame from a 3-axis sensor: header, status, and a fixed bank of samples.",
+  "description": "A telemetry frame from a 3-axis sensor: header, status, reserved space, and a fixed bank of samples.",
   "constants": {
     "SENSOR_MAGIC": "0x46524d31",
     "SENSOR_VERSION": 2,
@@ -87,6 +87,12 @@
       ]
     },
     {
+      "name": "reserved0",
+      "type": "uint16",
+      "reserved": true,
+      "description": "reserved header word — do not use"
+    },
+    {
       "name": "sample_count",
       "type": "uint16",
       "description": "logical number of valid samples in the bank",
@@ -103,26 +109,15 @@
       ]
     },
     {
-      "name": "text",
-      "type": "char[32]",
-      "value": ""
-    },
-    {
       "name": "label",
       "type": "char[16]",
       "description": "human-readable frame label",
       "value": "sensor-01"
     },
     {
-      "name": "reserved0",
-      "type": "uint16",
-      "reserved": true,
-      "description": "reserved header word — do not use"
-    },
-    {
       "name": "reserved1",
       "type": "bytes",
-      "size": 8,
+      "size": 12,
       "reserved": true,
       "description": "reserved for future header fields"
     },
