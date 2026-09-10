@@ -316,7 +316,7 @@ npm run compile       # esbuild bundle -> dist/extension.js, then tsc type-check
 npm run watch         # incremental esbuild
 npm run check-types   # tsc -p tsconfig.json && tsc -p tsconfig.webview.json
 npm run lint          # eslint src
-npm test              # 50 Mocha unit tests: layout, validator, emitter <-> parser, header golden
+npm test              # 52 Mocha unit tests: layout, validator, emitter <-> parser, header golden
 npm run example       # regenerate examples/generated/* from examples/SensorFrame.design.json
 npm run package       # -> binary-file-designer-<version>.vsix (via @vscode/vsce)
 ```
@@ -324,6 +324,15 @@ npm run package       # -> binary-file-designer-<version>.vsix (via @vscode/vsce
 Press <kbd>F5</kbd> for an Extension Development Host with `examples/` open. The
 extension bundles to a single `dist/extension.js`; `src/core/` is pure and
 type-checked separately from the CSP-locked webview scripts in `media/`.
+
+## Versions
+
+| Version | Highlights |
+| --- | --- |
+| **0.2.0** | Binary tab (colour-coded hex dump, Add palette, drag-to-reorder); reserved fields; per-struct sizes in the preview / layout doc; frame-creation walkthrough |
+| **0.1.0** | Form / JSON editor, three generators, round-trip check, pure tested `src/core/` |
+
+See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Author
 

@@ -2,7 +2,7 @@
   "name": "binary-file-designer",
   "displayName": "Binary File Designer",
   "description": "Design binary structures in a form editor and generate a sample binary, a C header, and a layout document for embedded development.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "devdoesit",
   "license": "MIT",
   "icon": "media/icon.png",

@@ -652,8 +652,18 @@
       root.appendChild(el('p', { class: 'hint', text: 'Open the JSON tab — the design could not be parsed as an object.' }));
       return;
     }
+    try {
+      renderFormBody(root, state.model);
+    } catch (e) {
+      root.appendChild(el('div', {
+        class: 'msg error',
+        text: 'The form could not be rendered (' + (e && e.message ? e.message : e) + '). Edit the design in the JSON tab.',
+      }));
+    }
+  }
+
+  function renderFormBody(root, m) {
     ensureDatalist();
-    const m = state.model;
 
     // ---- meta ----
     const meta = el('fieldset', {}, el('legend', { text: 'Design' }));
@@ -675,8 +685,10 @@
     for (const key of Object.keys(consts)) {
       cfs.appendChild(el('div', { class: 'kv-row' }, [
         textInput(key, (v) => mutate((d) => {
-          if (!v || v === key) return;
-          const val = d.constants[key]; delete d.constants[key]; d.constants[v] = val;
+          d.constants = d.constants || {};
+          if (!v || v === key || d.constants[key] === undefined || d.constants[v] !== undefined) return;
+          d.constants[v] = d.constants[key];
+          delete d.constants[key];
         }, true), { placeholder: 'NAME', commit: true }),
         textInput(valueToInput(consts[key]), (v) => mutate((d) => { d.constants[key] = parseValueInput(v); }), { placeholder: '0 or 0x…' }),
         iconBtn('✕', 'remove', () => mutate((d) => { delete d.constants[key]; }, true)),
@@ -700,14 +712,17 @@
       const box = el('div', { class: 'field' });
       box.appendChild(el('div', { class: 'toolbar-sub' }, [
         el('span', { text: 'struct ' }),
-        textInput(key, (v) => mutate((d) => {
-          if (!v || v === key) return;
-          const def = d.structs[key]; delete d.structs[key]; d.structs[v] = def;
-        }, true), { cls: isBadId(key) ? 'invalid' : '', commit: true }),
-        iconBtn('✕', 'delete struct', () => mutate((d) => { delete d.structs[key]; }, true)),
+        textInput(key, (v) => mutate((d) => renameStruct(d, key, v), true),
+          { cls: isBadId(key) ? 'invalid' : '', commit: true }),
+        iconBtn('✕', 'delete struct', () => mutate((d) => { if (d.structs) delete d.structs[key]; }, true)),
       ]));
       const sd = structs[key];
-      sd.fields = sd.fields || [];
+      if (!sd || typeof sd !== 'object') {
+        box.appendChild(el('div', { class: 'hint', text: 'malformed struct — fix it in the JSON tab' }));
+        sfs.appendChild(box);
+        continue;
+      }
+      sd.fields = Array.isArray(sd.fields) ? sd.fields : [];
       const children = el('div', { class: 'children' });
       renderFieldList(children, sd.fields);
       children.appendChild(addFieldBar(sd.fields));
@@ -726,7 +741,7 @@
 
     // ---- top-level fields ----
     const ffs = el('fieldset', {}, el('legend', { text: 'Fields (top-level struct body)' }));
-    m.fields = m.fields || [];
+    m.fields = Array.isArray(m.fields) ? m.fields : [];
     const list = el('div');
     renderFieldList(list, m.fields);
     ffs.appendChild(list);
@@ -748,6 +763,37 @@
     if (!used.has(base)) return base;
     let i = 2; while (used.has(base + '_' + i)) i++;
     return base + '_' + i;
+  }
+
+  /** Rewrite every `type` that is `<oldName>` or `<oldName>[…]` to use `newName`. */
+  function renameTypeRefs(fields, oldName, newName) {
+    if (!Array.isArray(fields)) return;
+    for (const f of fields) {
+      if (f && typeof f.type === 'string') {
+        const m = /^([A-Za-z_][A-Za-z0-9_]*)((?:\[\s*\d+\s*\])*)$/.exec(f.type);
+        if (m && m[1] === oldName) f.type = newName + m[2];
+      }
+      if (f && Array.isArray(f.fields)) renameTypeRefs(f.fields, oldName, newName);
+      if (f && f.items && typeof f.items === 'object') renameTypeRefs([f.items], oldName, newName);
+    }
+  }
+
+  /**
+   * Rename a reusable struct key, keeping references in sync. No-ops (rather than
+   * corrupting the model) if the source is already gone or the target name is
+   * taken — a stale/duplicate commit event must not clobber the definition.
+   */
+  function renameStruct(d, oldName, newName) {
+    d.structs = d.structs || {};
+    if (!newName || newName === oldName) return;
+    if (d.structs[oldName] === undefined) return;
+    if (d.structs[newName] !== undefined) return;
+    d.structs[newName] = d.structs[oldName];
+    delete d.structs[oldName];
+    renameTypeRefs(d.fields || [], oldName, newName);
+    for (const k of Object.keys(d.structs)) {
+      renameTypeRefs((d.structs[k] && d.structs[k].fields) || [], oldName, newName);
+    }
   }
 
   function renderFieldList(container, list) {
@@ -884,8 +930,8 @@
       for (const k of Object.keys(field.enum)) {
         t.appendChild(el('div', { class: 'enum-row' }, [
           textInput(k, (v) => mutate(() => {
-            if (!v || v === k || field.enum[v] !== undefined) return;
-            const lbl = field.enum[k]; delete field.enum[k]; field.enum[v] = lbl;
+            if (!field.enum || !v || v === k || field.enum[k] === undefined || field.enum[v] !== undefined) return;
+            field.enum[v] = field.enum[k]; delete field.enum[k];
           }, true), { type: 'number', placeholder: 'int', commit: true }),
           textInput(field.enum[k], (v) => mutate(() => { field.enum[k] = v; }), { placeholder: 'LABEL', cls: isBadId(field.enum[k]) ? 'invalid' : '' }),
           iconBtn('✕', 'remove', () => mutate(() => { delete field.enum[k]; }, true)),

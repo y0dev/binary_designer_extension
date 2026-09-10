@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-09-10
 
 - **Struct sizes** — the layout preview and `<name>_layout.md` now show every
   reusable and inline struct with its own size / alignment / field count, not
@@ -29,6 +29,11 @@
   type edits now commit on blur / Enter, and the "is this our own edit?" check
   tolerates VS Code's CRLF / final-newline normalization instead of forcing a
   full form rebuild.
+- Renaming a reusable struct no longer wipes the Structs and Fields sections
+  from the form: the rename is now idempotent (a stale/duplicate commit event
+  can't write an `undefined` struct definition), it rewrites `Name[…]`
+  references in every field so the design stays valid, and a malformed struct
+  entry renders an inline notice instead of aborting the whole form.
 
 ## 0.1.0
 
