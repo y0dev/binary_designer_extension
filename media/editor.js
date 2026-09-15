@@ -633,16 +633,31 @@
     return state.model && state.model.structs ? Object.keys(state.model.structs) : [];
   }
 
-  function ensureDatalist() {
-    let dl = $('type-options');
-    if (!dl) {
-      dl = el('datalist', { id: 'type-options' });
-      document.body.appendChild(dl);
+  /** Every type name the dropdown offers: scalars/composites, then live struct names. */
+  function typeOptions() {
+    return SCALARS.concat(structNames());
+  }
+
+  /**
+   * A real `<select>` for a field's `type` — common scalar/composite types plus
+   * every reusable struct currently defined, so nothing needs to be typed. If
+   * the field's current type isn't one of those (e.g. array shorthand like
+   * `Vec3[64]`, or a struct that no longer exists), it's kept as its own
+   * selected option at the top so the value is never silently discarded — pick
+   * a different option to replace it, or use the array toggle (`[]`) for a
+   * fixed-size array of the selected type instead of typing `[n]`.
+   */
+  function typeSelectInput(current, onChange) {
+    const known = typeOptions();
+    const values = known.includes(current) ? known : [current, ...known];
+    const n = el('select', { class: 'type-select' });
+    for (const t of values) {
+      const o = el('option', { value: t, text: t });
+      if (t === current) o.selected = true;
+      n.appendChild(o);
     }
-    dl.textContent = '';
-    for (const t of SCALARS.concat(structNames())) {
-      dl.appendChild(el('option', { value: t }));
-    }
+    n.addEventListener('change', () => onChange(n.value));
+    return n;
   }
 
   function renderForm() {
@@ -663,8 +678,6 @@
   }
 
   function renderFormBody(root, m) {
-    ensureDatalist();
-
     // ---- meta ----
     const meta = el('fieldset', {}, el('legend', { text: 'Design' }));
     const grid = el('div', { class: 'meta-grid' });
@@ -857,7 +870,7 @@
       cls: 'name' + (isBadId(field.name) ? ' invalid' : ''), placeholder: 'name',
     }));
 
-    const typeInput = textInput(field.type || '', (v) => mutate(() => { field.type = v; }, true), { placeholder: 'type', list: 'type-options', commit: true });
+    const typeInput = typeSelectInput(field.type || 'uint32', (v) => mutate(() => { field.type = v; }, true));
     main.appendChild(typeInput);
 
     main.appendChild(textInput(
@@ -889,6 +902,13 @@
     acts.appendChild(iconBtn('b', 'toggle bitfield', () => mutate(() => {
       field.bits ? delete field.bits : (field.bits = [{ name: 'bit0', width: 1 }]);
     }, true)));
+    if (!isArrayType) {
+      const arrBtn = iconBtn('[]', field.array ? 'fixed array (click to clear)' : 'make this a fixed-size array', () => mutate(() => {
+        field.array ? delete field.array : (field.array = { count: 4 });
+      }, true));
+      if (field.array) arrBtn.classList.add('on');
+      acts.appendChild(arrBtn);
+    }
     if (isStruct || isArrayType) {
       acts.appendChild(iconBtn('›', 'add child', () => mutate(() => {
         if (isStruct) { field.fields = field.fields || []; field.fields.push({ name: nextName(field.fields, 'field'), type: 'uint32' }); }

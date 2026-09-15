@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Type dropdown** — a field's `type` is now a real `<select>` (common
+  scalars/composites + every reusable struct currently defined), not a
+  free-text box, so common types never need typing. A `[]` toggle next to it
+  adds/removes a fixed-size `array` (count / countField) for any type, as an
+  alternative to typing `Name[64]` shorthand. Values that aren't in the list
+  (existing array shorthand, a since-renamed struct) stay selectable so no
+  design is silently changed.
+
 ## 0.2.0 — 2026-09-10
 
 - **Struct sizes** — the layout preview and `<name>_layout.md` now show every

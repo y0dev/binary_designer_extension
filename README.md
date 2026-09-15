@@ -14,8 +14,10 @@ dependency, and nothing in a design is ever executed.
 ## Form editor
 
 A tree editor for the design: add fields, arrays, enums, bitfields and reusable
-structs; a type combo (scalars + composites + struct names + free-typed
-shorthand); inline `enum` (value → label) and bitfield (name : width) tables;
+structs; a **type dropdown** — every scalar/composite plus each reusable struct
+you've defined, so nothing needs typing — with a `[]` toggle beside it to make
+any field a fixed-size array (`count` / `countField`) instead of typing
+`Name[64]`; inline `enum` (value → label) and bitfield (name : width) tables;
 drag a row's grip to reorder, duplicate a row, move in / out of structs. A
 **JSON tab** edits the whole design as text and is auto-selected when the tree
 can't represent it losslessly (multi-dimensional arrays). A live **layout
@@ -109,8 +111,10 @@ _Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
   (auto-selected when the tree can't represent the design losslessly), and a
   live hex dump of the sample binary; edits round-trip between all three.
 - **Tree editor** — fields, arrays, enums, bitfields and reusable structs; a
-  type combo; inline `enum` (value → label) and bitfield (name : width) tables;
-  drag a row's `⠿` grip to reorder; duplicate, move in / out of structs.
+  **type dropdown** listing every scalar/composite and reusable struct (no
+  typing), a `[]` toggle for a fixed-size array instead of `Name[64]` shorthand;
+  inline `enum` (value → label) and bitfield (name : width) tables; drag a row's
+  `⠿` grip to reorder; duplicate, move in / out of structs.
 - **Struct sizes** — a table of every reusable and inline struct with its own
   size and alignment, then the frame total, so nested layouts are sized at a
   glance rather than only the whole frame.
@@ -246,22 +250,23 @@ file opens in the form editor, not a text editor.
 ### 2 — Lay out the header
 
 In the **Form** tab, use **+ Field** to add the fixed header — `magic`
-(`uint32`), `version` (`uint16`), `state` (`uint8`), `flags` (`uint8`) — and set
-each row's type in the combo and its design-time `value`. Toggle **`{}`** on a
-row for an inline `enum` table and **`b`** for a bitfield (name : width) table.
-The layout preview on the right updates every keystroke.
+(`uint32`), `version` (`uint16`), `state` (`uint8`), `flags` (`uint8`) — pick
+each row's type from the dropdown and set its design-time `value`. Toggle
+**`{}`** on a row for an inline `enum` table and **`b`** for a bitfield
+(name : width) table. The layout preview on the right updates every keystroke.
 
 ![The form editor with the header fields and the live layout preview](docs/images/form-editor.png)
 
 ### 3 — Add a reusable struct, then use it
 
 In **Reusable structs**, click **+ struct**, name it `Vec3`, and add `x` / `y` /
-`z` as `float32`. Back in **Fields**, add a `samples` field and type `Vec3[64]`
-in the type combo — every struct name shows up there and as shorthand. The
-**Struct sizes** panel now lists `Vec3` at 12 bytes alongside the growing frame
-total.
+`z` as `float32`. Back in **Fields**, add a `samples` field, pick **`Vec3`**
+from the type dropdown — every struct you define shows up there automatically
+— and click **`[]`** to make it a fixed-size array, then set `count` to `64`.
+No typing required, and no `Vec3[64]` shorthand to remember. The **Struct
+sizes** panel now lists `Vec3` at 12 bytes alongside the growing frame total.
 
-![A reusable Vec3 struct, the type combo, and the Struct sizes panel](docs/images/step3-struct.png)
+![A reusable Vec3 struct, the type dropdown, and the Struct sizes panel](docs/images/step3-struct.png)
 
 ### 4 — See the bytes and rearrange
 

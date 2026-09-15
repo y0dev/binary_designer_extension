@@ -145,6 +145,12 @@ legend { padding: 0 4px; opacity: 0.8; font-weight: 600; }
   gap: 6px;
   align-items: center;
 }
+.field .field-main > input,
+.field .field-main > select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.type-select { cursor: pointer; }
 .field .field-main .col-label { display: none; }
 .field .field-desc { margin-top: 4px; }
 .field .field-desc input { width: 100%; }
