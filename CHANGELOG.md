@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 — 2026-09-16
 
+- **Fixed: `repository` / `bugs` pointed at the wrong GitHub repo.**
+  `package.json` used a hyphenated name (`binary-designer-extension`) that
+  never matched the real repo this project has been pushed to
+  (`binary_designer_extension`, underscores) — so the Marketplace
+  "Repository" and "Report an issue" links went to a repo that doesn't
+  exist. Both now point at `github.com/y0dev/binary_designer_extension`.
 - **`examples/.vscode/settings.json`** — a ready-to-copy example covering
   every `binaryDesigner.*` setting, with comments explaining each choice.
   It's live the moment you press F5 (that opens `examples/` as the dev-host
