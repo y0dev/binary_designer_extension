@@ -1,0 +1,49 @@
+{
+  // Example workspace settings for Binary File Designer.
+  //
+  // This is the folder the Extension Development Host opens on <F5> (see
+  // ../../.vscode/launch.json), so these are live the moment you press F5 —
+  // open SensorFrame.design.json and try them. Copy whichever ones you want
+  // into your own project's .vscode/settings.json (or User settings, to apply
+  // everywhere). Full reference: the README's "Settings" section.
+
+  // ---- Output ----------------------------------------------------------
+
+  // Write generated artifacts into examples/generated/ instead of next to the
+  // .design.json — keeps the workspace root tidy. (This is also where
+  // `npm run example` writes the checked-in reference .bin/.h/_layout.md, so
+  // generating from the UI here lands in the same place.)
+  "binaryDesigner.outputFolder": "generated",
+
+  // Re-run these generators every time you save a *.design.json — handy while
+  // iterating on a design so the .bin/.h/_layout.md never go stale. Remove
+  // entries (or set to []) to turn it off; order doesn't matter.
+  "binaryDesigner.generateOnSave": ["binary", "header", "layoutDoc"],
+
+  // ---- Layout ------------------------------------------------------------
+
+  // Packing used when a design omits "packing". 1 = fully packed (no
+  // implicit padding, ever); set a design's own "packing" to false to see the
+  // *natural* (unpacked) layout instead — see the README's
+  // "Packing: on, off, or none".
+  "binaryDesigner.defaultPacking": 1,
+
+  // ---- C header ------------------------------------------------------------
+
+  "binaryDesigner.header.staticAssert": true,
+  "binaryDesigner.header.includeStyle": "angle",
+  "binaryDesigner.header.enumTypedefForFields": false,
+  // Capacity assumed for an array.countField member that isn't a design's
+  // last field (0 = prompt each time instead).
+  "binaryDesigner.header.arrayMax": 64,
+
+  // ---- Editor --------------------------------------------------------------
+
+  // Open designs straight to the Binary tab in this workspace, e.g. for a
+  // firmware review focused on the actual bytes rather than building the
+  // design. Try "json" or "form" too.
+  "binaryDesigner.defaultView": "form",
+  "binaryDesigner.binaryTab.bytesPerRow": 16,
+  "binaryDesigner.binaryTab.maxBytesShown": 8192,
+  "binaryDesigner.identifierAutoFix": true
+}

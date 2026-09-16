@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **`examples/.vscode/settings.json`** — a ready-to-copy example covering
+  every `binaryDesigner.*` setting, with comments explaining each choice.
+  It's live the moment you press F5 (that opens `examples/` as the dev-host
+  workspace), and the README's Settings section now points to it.
+
 ## 0.4.0 — 2026-09-16
 
 - **The size field disables itself** for types that don't use it. In the Form

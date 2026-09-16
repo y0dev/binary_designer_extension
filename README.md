@@ -399,6 +399,11 @@ settings). None of them require a reload; a design already open picks most of
 them up the next time you open it, and the Binary-tab display settings apply
 live to editors that are already open.
 
+[`examples/.vscode/settings.json`](examples/.vscode/settings.json) is a
+ready-to-copy example covering every setting below, with comments explaining
+each choice — it's also what's active when you press <kbd>F5</kbd> from this
+repo, since that opens `examples/` as the workspace.
+
 ### Output
 
 | Setting | Default | Description |
