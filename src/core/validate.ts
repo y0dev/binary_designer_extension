@@ -56,8 +56,12 @@ export function validateDesign(design: unknown): ValidationResult {
   if (d.endianness !== undefined && d.endianness !== 'little' && d.endianness !== 'big') {
     err('endianness', `endianness must be "little" or "big"`);
   }
-  if (d.packing !== undefined && !VALID_PACKING.includes(d.packing as number)) {
-    err('packing', `packing must be one of ${VALID_PACKING.join(', ')}`);
+  if (
+    d.packing !== undefined &&
+    d.packing !== false &&
+    !VALID_PACKING.includes(d.packing as number)
+  ) {
+    err('packing', `packing must be one of ${VALID_PACKING.join(', ')}, or false to disable packing`);
   }
 
   // ---- constants ----

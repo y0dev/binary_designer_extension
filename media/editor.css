@@ -45,6 +45,11 @@ input:focus, select:focus, textarea:focus {
   outline-offset: -1px;
 }
 input.invalid { border-color: var(--vscode-inputValidation-errorBorder, #e51400); }
+input:disabled, select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--vscode-input-background);
+}
 
 .toolbar {
   display: flex;

@@ -96,6 +96,20 @@ test('no-static-assert option omits the assertion', () => {
   assert.doesNotMatch(generateHeader(design, { staticAssert: false }).header, /_Static_assert/);
 });
 
+test('packing: false emits no #pragma pack and asserts the natural size', () => {
+  const design: Design = {
+    name: 'Natural', packing: false, endianness: 'little',
+    fields: [
+      { name: 'tag', type: 'uint8' },
+      { name: 'value', type: 'float64' },
+    ],
+  };
+  const { header } = generateHeader(design, {});
+  assert.doesNotMatch(header, /#pragma pack\(/);
+  assert.match(header, /packing disabled/);
+  assert.match(header, /_Static_assert\(sizeof\(Natural\) == 16,/); // naturally aligned, not byte-packed
+});
+
 test('reusable structs are emitted in dependency order', () => {
   const design: Design = {
     name: 'Scene', packing: 1, endianness: 'little',

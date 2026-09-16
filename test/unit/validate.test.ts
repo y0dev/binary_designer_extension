@@ -101,3 +101,12 @@ test('recursive struct is reported', () => {
   assert.equal(r.ok, false);
   assert.ok(r.errors.some((e) => /recursive struct/.test(e.message)));
 });
+
+test('packing: false (disabled) is valid; other non-power-of-two values are not', () => {
+  const off = validateDesign({ name: 'F', packing: false, fields: [{ name: 'a', type: 'uint8' }] });
+  assert.equal(off.ok, true, JSON.stringify(off.errors));
+
+  const bad = validateDesign({ name: 'F', packing: 3 as unknown as number, fields: [{ name: 'a', type: 'uint8' }] });
+  assert.equal(bad.ok, false);
+  assert.ok(bad.errors.some((e) => e.path === 'packing'));
+});

@@ -7,14 +7,22 @@
  */
 
 export type Endianness = 'little' | 'big';
-export type Packing = 1 | 2 | 4 | 8;
+/**
+ * Struct alignment/packing in bytes, or `false` to disable packing entirely —
+ * every member then uses its natural (uncapped) alignment, matching a plain C
+ * struct with no `#pragma pack`. Compare a design's byte layout with and
+ * without packing by toggling this; with packing on (especially `1`, fully
+ * packed) any padding you want is explicit — add a `reserved` field for it —
+ * since the packer never inserts more than what alignment strictly requires.
+ */
+export type Packing = 1 | 2 | 4 | 8 | false;
 
 export interface Design {
   /** Required. Must be a valid C identifier. */
   name: string;
   /** "little" | "big". Default "little". */
   endianness?: Endianness;
-  /** Struct alignment/packing in bytes: 1 | 2 | 4 | 8. Default 1. */
+  /** Struct alignment/packing in bytes (1 | 2 | 4 | 8), or `false` to disable it (natural alignment, no `#pragma pack`). Default 1. */
   packing?: Packing;
   description?: string;
   /** Named constants usable as field values (`"value": "MAGIC"`). */

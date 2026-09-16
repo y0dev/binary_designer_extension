@@ -2,7 +2,7 @@
   "name": "binary-file-designer",
   "displayName": "Binary File Designer",
   "description": "Design binary structures in a form editor and generate a sample binary, a C header, and a layout document for embedded development.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "devdoesit",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -182,6 +182,18 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "binaryDesigner.designs",
+        "when": "workbenchState == empty",
+        "contents": "No folder is open.\n[Open Folder](command:vscode.openFolder)\n\nOpen a folder to browse or create `*.design.json` files in it."
+      },
+      {
+        "view": "binaryDesigner.designs",
+        "when": "workbenchState != empty",
+        "contents": "No *.design.json files found in this workspace.\n[Create Design](command:binaryDesigner.createDesign)\n[Open a Different Folder](command:vscode.openFolder)"
+      }
+    ],
     "configuration": {
       "title": "Binary File Designer",
       "properties": {

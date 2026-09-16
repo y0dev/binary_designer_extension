@@ -232,6 +232,12 @@
   $('btn-save').addEventListener('click', () => vscode.postMessage({ type: 'save' }));
   $('btn-save-draft').addEventListener('click', () => vscode.postMessage({ type: 'saveDraft' }));
   const cmd = (c) => vscode.postMessage({ type: 'command', command: c });
+  // Undo/redo the underlying document (VS Code's own undo stack — every edit
+  // gets there via a real WorkspaceEdit). Ctrl/Cmd+Z may already reach it
+  // depending on what has focus inside the webview; these buttons work
+  // regardless of focus.
+  $('btn-undo').addEventListener('click', () => cmd('undo'));
+  $('btn-redo').addEventListener('click', () => cmd('redo'));
   $('btn-bin').addEventListener('click', () => cmd('binaryDesigner.generateBinary'));
   $('btn-hdr').addEventListener('click', () => cmd('binaryDesigner.generateHeader'));
   $('btn-doc').addEventListener('click', () => cmd('binaryDesigner.generateLayoutDoc'));
@@ -930,10 +936,18 @@
     const typeInput = typeSelectInput(field.type || 'uint32', (v) => mutate(() => { field.type = v; }, true));
     main.appendChild(typeInput);
 
+    const needsSize = SIZED.has(baseType);
     main.appendChild(textInput(
       field.size != null ? String(field.size) : '',
       (v) => mutate(() => { field.size = v === '' ? undefined : parseInt(v, 10); }),
-      { placeholder: SIZED.has(baseType) ? 'size*' : 'size', type: 'number' },
+      {
+        placeholder: needsSize ? 'size*' : 'size (n/a)',
+        type: 'number',
+        disabled: !needsSize,
+        title: needsSize
+          ? 'byte length — required for bytes/padding/ascii/utf8/utf16'
+          : `"${baseType}" has a fixed size; size doesn't apply`,
+      },
     ));
 
     main.appendChild(selectInput(['', 'little', 'big'], field.endianness || '', (v) => mutate(() => { field.endianness = v || undefined; }), ['(endian)', 'little', 'big']));
@@ -1078,6 +1092,7 @@
       class: opts.cls || '',
       list: opts.list || undefined,
       disabled: opts.disabled,
+      title: opts.title || undefined,
     });
     if (opts.commit) {
       n.addEventListener('change', () => {

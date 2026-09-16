@@ -37,6 +37,11 @@ export function roundUp(value: number, align: number): number {
   return Math.ceil(value / a) * a;
 }
 
+/** A scalar's alignment: its natural size, capped by packing unless packing is disabled (`false`). */
+export function effectiveAlign(packing: Packing, naturalSize: number): number {
+  return packing === false ? naturalSize : Math.min(packing, naturalSize);
+}
+
 export function parseNumericValue(
   v: unknown,
   constants?: Record<string, string | number>,
@@ -184,7 +189,7 @@ function resolveShape(
     if (!si || si.kind !== 'int') {
       throw new Error(`bitfield "${field.name}" needs an integer container type, got "${field.type}"`);
     }
-    const align = Math.min(ctx.packing, si.size);
+    const align = effectiveAlign(ctx.packing, si.size);
     return {
       cType: si.cType,
       cArraySuffix: cArraySuffix(dims),
@@ -257,7 +262,7 @@ function resolveShape(
         kind: 'char',
       };
     }
-    const align = Math.min(ctx.packing, si.size);
+    const align = effectiveAlign(ctx.packing, si.size);
     return {
       cType: si.cType,
       cArraySuffix: cArraySuffix(dims),

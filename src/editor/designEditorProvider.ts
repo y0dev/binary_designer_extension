@@ -165,7 +165,11 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
           await this.saveWithGate(document, true);
           break;
         case 'command':
-          if (msg.command) {
+          if (msg.command === 'undo' || msg.command === 'redo') {
+            // Built-in editor commands: target whatever editor is active, take
+            // no arguments, and undo/redo the WorkspaceEdits `apply()` makes.
+            await vscode.commands.executeCommand(msg.command);
+          } else if (msg.command) {
             this.activeDesignUri = document.uri;
             await vscode.commands.executeCommand(msg.command, document.uri);
           }
@@ -256,6 +260,9 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
       <button id="tab-binary" class="tab" data-view="binary">Binary</button>
     </div>
     <div class="spacer"></div>
+    <button id="btn-undo" title="Undo (Ctrl/Cmd+Z)">↶ Undo</button>
+    <button id="btn-redo" title="Redo (Ctrl/Cmd+Shift+Z / Ctrl+Y)">↷ Redo</button>
+    <span class="sep"></span>
     <button id="btn-save" class="primary" title="Save (blocked on errors)">Save</button>
     <button id="btn-save-draft" title="Save even when invalid">Save draft</button>
     <span class="sep"></span>

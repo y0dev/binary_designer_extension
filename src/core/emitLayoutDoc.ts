@@ -24,7 +24,10 @@ export function emitLayoutDoc(design: Design, opts: LayoutDocOptions = {}): stri
     lines.push('');
   }
   lines.push(`- **Endianness:** ${layout.endianness}`);
-  lines.push(`- **Packing:** ${layout.packing} byte(s)`);
+  const packingText = layout.packing === false
+    ? 'disabled (natural alignment, no `#pragma pack`)'
+    : `${layout.packing} byte(s)`;
+  lines.push(`- **Packing:** ${packingText}`);
   lines.push(`- **Frame size:** ${layout.size} bytes`);
   lines.push(`- **Frame alignment:** ${layout.align}`);
   lines.push(`- **Padding inserted:** ${layout.paddingBytes} bytes`);

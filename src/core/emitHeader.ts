@@ -47,8 +47,13 @@ export function generateHeader(design: Design, opts: HeaderOptions = {}): Header
   out.push('');
   out.push(`#include ${include}`);
   out.push('');
-  out.push(`#pragma pack(push, ${packing})          /* from design.packing */`);
-  out.push('');
+  if (packing !== false) {
+    out.push(`#pragma pack(push, ${packing})          /* from design.packing */`);
+    out.push('');
+  } else {
+    out.push('/* packing disabled — natural (compiler-default) alignment, no #pragma pack */');
+    out.push('');
+  }
 
   // ---- reusable structs, dependency order ----
   const order = topoSortStructs(design);
@@ -78,8 +83,10 @@ export function generateHeader(design: Design, opts: HeaderOptions = {}): Header
   out.push(`} ${design.name};`);
   out.push('');
 
-  out.push('#pragma pack(pop)');
-  out.push('');
+  if (packing !== false) {
+    out.push('#pragma pack(pop)');
+    out.push('');
+  }
 
   if (opts.staticAssert !== false) {
     const layout = computeLayout(design);

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0 — 2026-09-16
+
+- **The size field disables itself** for types that don't use it. In the Form
+  tab, `size` is only editable for `bytes` / `padding` / `ascii` / `utf8` /
+  `utf16`; for a fixed-size scalar, a struct name, `struct`, or `array` it's
+  grayed out, since those types have no "size" to set.
+- **`"packing": false`** disables packing entirely: every member uses its
+  natural (uncapped) alignment — the same layout a real C compiler produces
+  with no `#pragma pack` (checked against `gcc`). Compare a design's byte
+  layout with and without packing, or stay fully packed (`1`, the default) and
+  add `"reserved"` fields yourself wherever you want explicit padding. The C
+  header omits `#pragma pack` entirely when packing is disabled. New
+  `effectiveAlign()` core export; `Packing` is now `1 | 2 | 4 | 8 | false`.
+- **Undo / Redo** toolbar buttons — every edit (Form, JSON, or Binary tab) is a
+  real edit on the document, so they walk VS Code's own undo stack.
+- **Designs view empty state**: no folder open shows **Open Folder**; a folder
+  with no `*.design.json` files shows **Create Design** and **Open a Different
+  Folder** — via `contributes.viewsWelcome`, no more blank panel.
+
 ## 0.3.0 — 2026-09-15
 
 - **Fixed: JSON edits didn't reach the Form tab.** Editing the JSON tab
