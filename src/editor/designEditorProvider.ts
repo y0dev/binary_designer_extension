@@ -37,6 +37,28 @@ interface HostToWebview {
   defaulted: string[];
 }
 
+/** Pushed live when `binaryDesigner.binaryTab.*` changes, no reopen needed. */
+interface ConfigMessage {
+  type: 'config';
+  bytesPerRow: number;
+  maxBytesShown: number;
+}
+
+interface BinaryTabConfig {
+  bytesPerRow: number;
+  maxBytesShown: number;
+}
+
+function readBinaryTabConfig(): BinaryTabConfig {
+  const cfg = vscode.workspace.getConfiguration('binaryDesigner');
+  const bytesPerRow = Number(cfg.get('binaryTab.bytesPerRow', 16));
+  const maxBytesShown = Number(cfg.get('binaryTab.maxBytesShown', 8192));
+  return {
+    bytesPerRow: [8, 16, 32].includes(bytesPerRow) ? bytesPerRow : 16,
+    maxBytesShown: Number.isFinite(maxBytesShown) && maxBytesShown >= 256 ? maxBytesShown : 8192,
+  };
+}
+
 export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
   public static readonly viewType = 'binaryDesigner.designEditor';
 
@@ -54,7 +76,9 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
       enableScripts: true,
       localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')],
     };
-    webview.html = this.getHtml(webview);
+    const rawDefaultView = vscode.workspace.getConfiguration('binaryDesigner').get<string>('defaultView', 'form');
+    const defaultView = ['form', 'json', 'binary'].includes(rawDefaultView) ? rawDefaultView : 'form';
+    webview.html = this.getHtml(webview, defaultView, readBinaryTabConfig());
 
     this.activeDesignUri = document.uri;
 
@@ -117,6 +141,13 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
       }
     });
 
+    const configSub = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('binaryDesigner.binaryTab')) {
+        const msg: ConfigMessage = { type: 'config', ...readBinaryTabConfig() };
+        void webview.postMessage(msg);
+      }
+    });
+
     const msgSub = webview.onDidReceiveMessage(async (msg: WebviewToHost) => {
       switch (msg.type) {
         case 'ready':
@@ -145,6 +176,7 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel.onDidDispose(() => {
       changeSub.dispose();
       focusSub.dispose();
+      configSub.dispose();
       msgSub.dispose();
     });
   }
@@ -187,7 +219,7 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
     await document.save();
   }
 
-  private getHtml(webview: vscode.Webview): string {
+  private getHtml(webview: vscode.Webview, defaultView: string, binaryTab: BinaryTabConfig): string {
     const nonce = getNonce();
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, 'media', 'editor.js'),
@@ -212,7 +244,11 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
   <link href="${styleUri}" rel="stylesheet" />
   <title>Binary File Designer</title>
 </head>
-<body>
+<body
+  data-default-view="${escapeAttr(defaultView)}"
+  data-bytes-per-row="${binaryTab.bytesPerRow}"
+  data-max-bytes-shown="${binaryTab.maxBytesShown}"
+>
   <header class="toolbar">
     <div class="tabs">
       <button id="tab-form" class="tab active" data-view="form">Form</button>
@@ -257,6 +293,10 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
 </body>
 </html>`;
   }
+}
+
+function escapeAttr(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 function getNonce(): string {

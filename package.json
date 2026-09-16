@@ -190,11 +190,49 @@
           "default": "",
           "markdownDescription": "Folder for generated artifacts, relative to the workspace root. Leave empty to write next to the `*.design.json` file."
         },
+        "binaryDesigner.defaultView": {
+          "type": "string",
+          "enum": ["form", "json", "binary"],
+          "enumDescriptions": [
+            "Start on the Form tree editor.",
+            "Start on the raw JSON tab.",
+            "Start on the Binary tab (hex dump of the sample binary)."
+          ],
+          "default": "form",
+          "description": "Which tab a *.design.json opens on. All three always show the same document and stay in sync regardless of which one you start on."
+        },
+        "binaryDesigner.generateOnSave": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["binary", "header", "layoutDoc"],
+            "enumDescriptions": [
+              "Generate Sample Binary",
+              "Generate C Header (+ layout doc)",
+              "Generate Layout Doc"
+            ]
+          },
+          "default": [],
+          "uniqueItems": true,
+          "markdownDescription": "Automatically run these generators every time you save a `*.design.json` — the same as running the command by hand, including its notifications and any \"invalid design\" prompt. Empty (the default) runs nothing automatically."
+        },
         "binaryDesigner.defaultPacking": {
           "type": "number",
           "enum": [1, 2, 4, 8],
           "default": 1,
           "description": "Default struct packing (in bytes) applied when a design omits \"packing\"."
+        },
+        "binaryDesigner.binaryTab.bytesPerRow": {
+          "type": "number",
+          "enum": [8, 16, 32],
+          "default": 16,
+          "description": "Bytes per row in the Binary tab's hex dump."
+        },
+        "binaryDesigner.binaryTab.maxBytesShown": {
+          "type": "number",
+          "default": 8192,
+          "minimum": 256,
+          "markdownDescription": "Maximum number of bytes rendered inline in the Binary tab. A sample binary larger than this shows its size and a prompt to use **Generate Sample Binary** instead of a (very long) hex dump. Takes effect on already-open editors without reopening them."
         },
         "binaryDesigner.header.staticAssert": {
           "type": "boolean",

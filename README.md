@@ -11,36 +11,72 @@ generates from it. Built on the VS Code **Custom Editor API**; the layout
 engine, validator and generators are a pure, unit-tested core with no `vscode`
 dependency, and nothing in a design is ever executed.
 
-## Form editor
+## Tabs
 
-A tree editor for the design: add fields, arrays, enums, bitfields and reusable
-structs; a **type dropdown** — every scalar/composite plus each reusable struct
-you've defined, so nothing needs typing — with a `[]` toggle beside it to make
-any field a fixed-size array (`count` / `countField`) instead of typing
-`Name[64]`; inline `enum` (value → label) and bitfield (name : width) tables;
-drag a row's grip to reorder, duplicate a row, move in / out of structs. A
-**JSON tab** edits the whole design as text and is auto-selected when the tree
-can't represent it losslessly (multi-dimensional arrays). A live **layout
-preview** shows a **Struct sizes** table — every reusable and inline struct with
-its own size and alignment, then the frame — and a **Frame layout** table of
-`Offset · Name · C type · Size` (`elem × count` for arrays) computed under the
-design's `packing` and `endianness`, with the total size and every padding byte
-the packer inserts.
+The editor has three tabs — **Form**, **JSON**, **Binary** — and they are three
+*views of the exact same document*, not three copies of it. There is one
+`*.design.json`; whichever tab you edit, the other two update immediately:
+
+- Change a type or drag a field in the **Form** tab → the **JSON** tab's text
+  updates and the **Binary** tab re-emits the hex dump.
+- Edit raw JSON in the **JSON** tab → the **Form** tree rebuilds to match and
+  the **Binary** tab re-emits.
+- Add or reorder a field by dragging in the **Binary** tab → both the **Form**
+  tree and the **JSON** text update.
+
+Nothing needs a manual refresh or a re-open, and switching tabs never loses
+unsaved changes — **Save** / **Save draft** write the one underlying document,
+whichever tab you're looking at. Pick which tab a design opens on with
+[`binaryDesigner.defaultView`](#settings).
+
+### Form tab
+
+The tree editor. This is where you build the design without hand-writing JSON:
+
+- **Add a field**: **+ Field** / **+ Array** / **+ Enum** / **+ Struct**, at the
+  top level or inside any struct.
+- **Set its type** from the **dropdown** — every scalar/composite plus each
+  reusable struct you've defined, so nothing needs typing.
+- **Make it an array**: click **`[]`** for a fixed size (`count`) or a
+  length-prefixed one (`countField`) — no `Name[64]` shorthand to remember.
+- **`{}`** adds an inline `enum` (value → label) table; **`b`** adds a bitfield
+  (name : width) table; **`rsv`** marks the field reserved for future use.
+- **Reorder** by dragging a row's **`⠿`** grip; **`⧉`** duplicates a row (and
+  its subtree); **`✕`** deletes it.
+- **Reusable structs**: define a layout once under **+ struct**, then pick it
+  by name from any field's type dropdown, anywhere in the design.
+- Watch the **layout preview** (right-hand panel) as you go — struct sizes,
+  offsets, and any padding the packer inserts update on every change.
 
 ![The form editor with the live layout preview](docs/images/form-editor.png)
 
-## Binary tab
+### JSON tab
 
-The sample binary this design would emit, rendered as a classic
-`Offset · Hex · ASCII` dump with each top-level field's bytes colour-coded.
-Hover a byte, a field chip or a layout-preview row and the other two
-cross-highlight. An **Add** palette (`u8 … f64`, `char[16]`, `bytes[4]`, `enum`,
-`array`, `struct`, `reserve u32`, `reserve[16]`, and every reusable struct)
-appends a field on click or, dragged onto a byte, inserts it there. Drag an
-existing field — its chip or its highlighted bytes — onto another to reorder the
-top-level struct; drop on the end zone to move it last. Every edit is written
-straight back to the `.design.json`, the hex re-emits, and the generated header
-and layout doc follow.
+The whole design as text — full control, including shapes the tree can't show
+(multi-dimensional arrays like `int16[4][3]`). It's auto-selected the moment a
+design needs that; otherwise switch to it any time for bulk edits, copy-paste,
+or diffing. Parse errors and validation issues appear in the status bar above
+both tabs; fix them and the Form and Binary tabs pick the change up as soon as
+the JSON parses.
+
+### Binary tab
+
+The sample binary this design would emit, as a classic `Offset · Hex · ASCII`
+dump with each top-level field's bytes colour-coded:
+
+- **Hover** a byte, a field chip, or a layout-preview row — the other two
+  cross-highlight so you can see exactly which bytes are which field.
+- **Add a field without leaving this tab**: click a type in the **Add** palette
+  (`u8 … f64`, `char[16]`, `bytes[4]`, `enum`, `array`, `struct`, `reserve u32`,
+  `reserve[16]`, and every reusable struct) to append it, or **drag** the type
+  onto a byte to insert it exactly there.
+- **Reorder**: drag a field's chip or its highlighted bytes onto another field;
+  drop on the dashed end zone to move it last.
+- Reserved slots (`reserve u32` / `reserve[16]`, or the `rsv` toggle in the Form
+  tab) render hatched, so future-use space is obviously not "real" data.
+
+Everything here edits the design the same way the Form tab does — it's the same
+document, just a different way of seeing and rearranging it.
 
 ![The Binary tab: colour-coded hex dump with the Add palette and a reserved slot](docs/images/binary-tab.png)
 
@@ -107,9 +143,10 @@ _Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
 
 ## What you get
 
-- **Form / JSON / Binary tabs** — a tree editor for the design, a raw-JSON tab
-  (auto-selected when the tree can't represent the design losslessly), and a
-  live hex dump of the sample binary; edits round-trip between all three.
+- **Form / JSON / Binary tabs** — three views of one document, always in sync:
+  a tree editor, a raw-JSON tab (auto-selected when the tree can't represent
+  the design losslessly), and a live hex dump of the sample binary. Edit any
+  one and the other two update immediately — see [Tabs](#tabs).
 - **Tree editor** — fields, arrays, enums, bitfields and reusable structs; a
   **type dropdown** listing every scalar/composite and reusable struct (no
   typing), a `[]` toggle for a fixed-size array instead of `Name[64]` shorthand;
@@ -154,11 +191,16 @@ _Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
   unit-tested module.
 - **Round-trip check** — re-parse the generated bytes against the design and
   assert every field reads back exactly what was written.
+- **Generate on save** (opt-in, `binaryDesigner.generateOnSave`) — re-run
+  chosen generators automatically every time you save a design.
+- **Pick your starting tab** (`binaryDesigner.defaultView`) and the Binary
+  tab's **bytes per row** / **max bytes shown** (`binaryDesigner.binaryTab.*`,
+  the latter applies live, no reopen needed) — see [Settings](#settings).
 - **Designs view** — an Activity Bar list of every `*.design.json` in the
   workspace (size / error count), kept live by a file watcher.
 - **Pure, tested core** — `src/core/` (layout engine, `validateDesign`,
   `validateIdentifier`, the emitters, the parser) has no `vscode` dependency and
-  is covered by 50 Mocha tests, including golden C headers verified to compile
+  is covered by 52 Mocha tests, including golden C headers verified to compile
   under `-Wall -Werror -Wextra -pedantic`.
 - Native VS Code look — theme variables throughout, so light, dark and
   high-contrast all work.
@@ -175,10 +217,12 @@ code, and the header generator only emits, it never imports `.h`.
 2. Lay out the top-level struct in the **Form** tab; watch the **layout
    preview** for offsets, size and padding.
 3. Switch to the **Binary** tab to see the bytes, add fields from the **Add**
-   palette, and drag fields to reorder.
+   palette, and drag fields to reorder — or drop into the **JSON** tab for bulk
+   edits. All three tabs always show the same design; see [Tabs](#tabs).
 4. Run **Binary Designer: Generate C Header** (and **Generate Sample Binary** /
    **Generate Layout Doc**) from the palette, the editor toolbar, the Designs
-   view, or the Explorer right-click menu.
+   view, or the Explorer right-click menu — or turn on
+   `binaryDesigner.generateOnSave` to run them automatically every time you save.
 
 ### The design schema
 
@@ -303,15 +347,43 @@ the Explorer right-click menu for a `*.design.json`.
 
 ## Settings
 
+Open **Settings** (<kbd>Ctrl/Cmd+,</kbd>) and search **"Binary Designer"** to
+get a form for all of these, or set them directly in `.vscode/settings.json` —
+either works, and either can be set per-workspace or for every workspace (User
+settings). None of them require a reload; a design already open picks most of
+them up the next time you open it, and the Binary-tab display settings apply
+live to editors that are already open.
+
+### Output
+
 | Setting | Default | Description |
 | --- | --- | --- |
-| `binaryDesigner.outputFolder` | `""` | Folder for generated artifacts, relative to the workspace root; empty = next to the design file |
-| `binaryDesigner.defaultPacking` | `1` | Struct packing (bytes) used when a design omits `packing` |
-| `binaryDesigner.header.staticAssert` | `true` | Emit `_Static_assert(sizeof(...) == N)` so layout drift fails the compile |
-| `binaryDesigner.header.includeStyle` | `angle` | `#include <stdint.h>` vs `"stdint.h"` |
-| `binaryDesigner.header.enumTypedefForFields` | `false` | Declare enum fields with the generated enum typedef instead of their integer type |
-| `binaryDesigner.header.arrayMax` | `0` | Fixed `[MAX]` capacity for `array.countField` members in the header (`0` = prompt) |
-| `binaryDesigner.identifierAutoFix` | `true` | Offer one-click *fix name* actions for invalid C identifiers in the editor |
+| `binaryDesigner.outputFolder` | `""` | Folder for generated artifacts, relative to the workspace root. Empty = next to the design file. |
+| `binaryDesigner.generateOnSave` | `[]` | Run these generators automatically on every save: any of `binary`, `header`, `layoutDoc`. Empty = off. Behaves exactly like running the command by hand. |
+
+### Layout
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `binaryDesigner.defaultPacking` | `1` | Struct packing (bytes) used when a design omits `packing`. |
+
+### C header
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `binaryDesigner.header.staticAssert` | `true` | Emit `_Static_assert(sizeof(...) == N)` so layout drift fails the compile. |
+| `binaryDesigner.header.includeStyle` | `angle` | `#include <stdint.h>` vs `"stdint.h"`. |
+| `binaryDesigner.header.enumTypedefForFields` | `false` | Declare enum fields with the generated enum typedef instead of their integer type. |
+| `binaryDesigner.header.arrayMax` | `0` | Fixed `[MAX]` capacity for `array.countField` members in the header (`0` = prompt when generating). |
+
+### Editor
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `binaryDesigner.defaultView` | `form` | Which tab a design opens on: `form`, `json`, or `binary`. All three always show the same document. |
+| `binaryDesigner.binaryTab.bytesPerRow` | `16` | Bytes per row in the Binary tab's hex dump: `8`, `16`, or `32`. |
+| `binaryDesigner.binaryTab.maxBytesShown` | `8192` | Cap on bytes rendered inline; a bigger sample binary shows its size and a prompt to use **Generate Sample Binary** instead. Raise it for a large frame if your machine can take the extra rendering. |
+| `binaryDesigner.identifierAutoFix` | `true` | Offer one-click *fix name* actions for invalid C identifiers in the editor. |
 
 ## Building from source
 

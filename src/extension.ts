@@ -55,6 +55,31 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('binaryDesigner.roundTripCheck', (arg: unknown) =>
       roundTripCheckCommand(arg, activeUri())),
   );
+
+  // binaryDesigner.generateOnSave: re-run the chosen generators every time a
+  // design is saved, in the order listed — identical to running the commands
+  // by hand (including their notifications and the invalid-design prompt).
+  const GENERATE_ON_SAVE_COMMANDS: Record<string, string> = {
+    binary: 'binaryDesigner.generateBinary',
+    header: 'binaryDesigner.generateHeader',
+    layoutDoc: 'binaryDesigner.generateLayoutDoc',
+  };
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument(async (document) => {
+      if (!isDesignUri(document.uri)) {
+        return;
+      }
+      const kinds = vscode.workspace
+        .getConfiguration('binaryDesigner', document.uri)
+        .get<string[]>('generateOnSave', []);
+      for (const kind of kinds) {
+        const command = GENERATE_ON_SAVE_COMMANDS[kind];
+        if (command) {
+          await vscode.commands.executeCommand(command, document.uri);
+        }
+      }
+    }),
+  );
 }
 
 export function deactivate(): void {

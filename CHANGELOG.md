@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- **Fixed: JSON edits didn't reach the Form tab.** Editing the JSON tab
+  correctly re-emitted the Binary tab and layout preview (they're driven by the
+  host, not the webview's local state), but the Form tree kept showing whatever
+  it had before — silently stale — because the echo-detection added for the
+  focus-loss fix couldn't tell a JSON-tab edit apart from the Form tab's own
+  echo. The webview now tags each outbound edit with its source; only a
+  genuine Form-tab echo skips the rebuild, so a JSON edit (or an external file
+  change) always refreshes the Form tree.
+- **New settings**: `binaryDesigner.defaultView` (which tab a design opens on),
+  `binaryDesigner.generateOnSave` (auto-run chosen generators on save),
+  `binaryDesigner.binaryTab.bytesPerRow` / `.maxBytesShown` (hex-dump display —
+  apply live to editors already open, no reopen needed).
+- **README**: a "Tabs" section explains Form / JSON / Binary as three synced
+  views of one document, each with its own how-to list; Settings reorganised
+  into Output / Layout / C header / Editor groups with a plain-English "how to
+  change one" note.
 - **Type dropdown** — a field's `type` is now a real `<select>` (common
   scalars/composites + every reusable struct currently defined), not a
   free-text box, so common types never need typing. A `[]` toggle next to it

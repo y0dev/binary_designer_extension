@@ -34,8 +34,21 @@
     hexInsert: /** @type {any} */ (null),
     /** drag state for the Form tree (sibling reorder): the live array + index */
     formDrag: /** @type {{list:any[], index:number}|null} */ (null),
+    /** binaryDesigner.binaryTab.maxBytesShown / bytesPerRow — see the 'config' message */
     hexRenderCap: 8192,
+    hexBytesPerRow: 16,
   };
+
+  // Settings baked into the page when it was opened (defaultView, binaryTab.*);
+  // binaryTab.* also updates live via a 'config' message if the setting changes
+  // while the editor is open.
+  (function readInitialConfig() {
+    const ds = (document.body && document.body.dataset) || {};
+    const bpr = Number(ds.bytesPerRow);
+    const cap = Number(ds.maxBytesShown);
+    if (bpr === 8 || bpr === 16 || bpr === 32) state.hexBytesPerRow = bpr;
+    if (Number.isFinite(cap) && cap >= 256) state.hexRenderCap = cap;
+  })();
 
   const FIELD_HUES = [210, 145, 32, 275, 0, 190, 95, 320, 55, 250, 165, 15];
   function hashStr(s) {
@@ -80,7 +93,25 @@
   /** @param {string} id @returns {any} */
   const $ = (id) => document.getElementById(id);
 
-  // ---- messaging ---------------------------------------------------------
+  // ---- messaging -----------------------------------------------------
+  //
+  // Three views, one document: the Form tab mutates `state.model` directly and
+  // serializes it; the JSON tab sends its raw text untouched; the Binary tab is
+  // pure output (bytes + layout the host computed) and never edits anything.
+  // Every `update` the host sends is authoritative for the OTHER tabs — so a
+  // JSON edit must refresh the Form tree, and (already true) both edits refresh
+  // the Binary tab and layout preview, since those are rebuilt from the message
+  // unconditionally below.
+  //
+  // The one case that must NOT rebuild the Form DOM is the echo of an edit the
+  // Form tab itself just made: `state.model` there was already mutated in
+  // place, so there's nothing new to apply, and rebuilding would steal focus
+  // mid-keystroke. `pendingSource` tracks who sent the in-flight `apply` so the
+  // echo can be told apart from a JSON-tab edit, an external file change, or
+  // the initial load — all of which DO need the form rebuilt.
+  /** @type {'form'|'json'|null} */
+  let pendingSource = null;
+
   function apply() {
     let text;
     try {
@@ -89,12 +120,32 @@
       return;
     }
     state.lastApplied = text;
+    pendingSource = 'form';
+    vscode.postMessage({ type: 'apply', text });
+  }
+
+  /** Send raw text typed in the JSON tab — `state.model` is refreshed from the host's echo. */
+  function applyJsonText(text) {
+    state.lastApplied = text;
+    pendingSource = 'json';
     vscode.postMessage({ type: 'apply', text });
   }
 
   window.addEventListener('message', (ev) => {
     const msg = ev.data;
-    if (!msg || msg.type !== 'update') return;
+    if (!msg) return;
+    if (msg.type === 'config') {
+      // binaryDesigner.binaryTab.* changed — apply live, no reopen needed.
+      if (msg.bytesPerRow === 8 || msg.bytesPerRow === 16 || msg.bytesPerRow === 32) {
+        state.hexBytesPerRow = msg.bytesPerRow;
+      }
+      if (typeof msg.maxBytesShown === 'number' && msg.maxBytesShown >= 256) {
+        state.hexRenderCap = msg.maxBytesShown;
+      }
+      renderHex();
+      return;
+    }
+    if (msg.type !== 'update') return;
     state.text = msg.text;
     state.errors = msg.errors || [];
     state.warnings = msg.warnings || [];
@@ -106,21 +157,21 @@
     state.defaulted = msg.defaulted || [];
     state.bytes = msg.bytesB64 ? b64ToBytes(msg.bytesB64) : null;
 
-    // Decide whether this update is an echo of an edit WE just made. Exact text
-    // compare is not enough: VS Code may normalise EOLs (CRLF on Windows) or
-    // final-newline settings, which would make our own change look external and
-    // trigger a full form rebuild — stealing focus mid-keystroke. So fall back
-    // to a semantic (parsed-model) comparison.
+    // Exact text compare isn't enough on its own: VS Code may normalise EOLs
+    // (CRLF on Windows) or final-newline settings, which would make our own
+    // change look external. Fall back to a semantic (parsed-model) comparison
+    // before concluding this is a genuine echo.
     const norm = (s) => String(s == null ? '' : s).replace(/\r\n/g, '\n');
-    let isEcho = norm(msg.text) === norm(state.lastApplied);
-    if (!isEcho) {
+    const source = pendingSource;
+    pendingSource = null;
+    const looksLikeEcho = norm(msg.text) === norm(state.lastApplied) || (() => {
+      try { return JSON.stringify(JSON.parse(msg.text)) === JSON.stringify(state.model); } catch (e) { return false; }
+    })();
+    const isFormEcho = source === 'form' && looksLikeEcho;
+
+    if (!isFormEcho) {
       try {
-        const incoming = JSON.parse(msg.text);
-        if (state.model && JSON.stringify(incoming) === JSON.stringify(state.model)) {
-          isEcho = true; // same design; only whitespace / EOL differs from our edit
-        } else {
-          state.model = incoming;
-        }
+        state.model = JSON.parse(msg.text);
       } catch (e) {
         // leave model as-is; JSON tab shows the raw text and parse error
       }
@@ -131,9 +182,10 @@
       state.autoJsonNotified = true;
       setView('json');
     }
-    // Only rebuild the form for changes that did NOT originate here — rebuilding
-    // on our own echo would steal focus while the user is typing in a field.
-    if (!isEcho) renderForm();
+    // Rebuild the form for anything that isn't our own form echo — in
+    // particular, a JSON-tab edit always rebuilds it (nothing there can lose
+    // focus: the JSON textarea is what's focused, not a form input).
+    if (!isFormEcho) renderForm();
     renderStatus();
     renderPreview();
     renderHex();
@@ -161,16 +213,20 @@
   $('tab-json').addEventListener('click', () => setView('json'));
   $('tab-binary').addEventListener('click', () => setView('binary'));
 
+  // binaryDesigner.defaultView — which tab a design opens on (all three always
+  // show the same document; the JSON tab still auto-opens instead when the
+  // design isn't form-representable, once data arrives).
+  (function applyDefaultView() {
+    const dv = document.body && document.body.dataset && document.body.dataset.defaultView;
+    if (dv === 'json' || dv === 'binary') setView(dv);
+  })();
+
   $('json-text').addEventListener('focus', () => { state.jsonFocused = true; });
   $('json-text').addEventListener('blur', () => { state.jsonFocused = false; });
   let jsonTimer = 0;
   $('json-text').addEventListener('input', () => {
     clearTimeout(jsonTimer);
-    jsonTimer = setTimeout(() => {
-      const text = $('json-text').value;
-      state.lastApplied = text;
-      vscode.postMessage({ type: 'apply', text });
-    }, 250);
+    jsonTimer = setTimeout(() => applyJsonText($('json-text').value), 250);
   });
 
   $('btn-save').addEventListener('click', () => vscode.postMessage({ type: 'save' }));
@@ -529,7 +585,8 @@
     const bytes = state.bytes;
     const total = bytes.length;
     const shown = Math.min(total, state.hexRenderCap);
-    const perRow = 16;
+    const perRow = state.hexBytesPerRow;
+    const half = Math.floor(perRow / 2);
 
     for (let base = 0; base < shown; base += perRow) {
       const row = el('div', { class: 'hex-row' });
@@ -538,7 +595,7 @@
       const asc = el('span', { class: 'hex-ascii' });
       for (let j = 0; j < perRow; j++) {
         const off = base + j;
-        const mid = j === 8 ? ' ' : '';
+        const mid = j === half ? ' ' : '';
         if (off >= shown) {
           hexCols.appendChild(el('span', { class: 'hex-cell gap', text: mid + '   ' }));
           continue;
