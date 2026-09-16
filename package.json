@@ -17,10 +17,10 @@
   "homepage": "https://www.devontaereid.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/y0dev/binary-designer-extension.git"
+    "url": "https://github.com/y0dev/binary_designer_extension.git"
   },
   "bugs": {
-    "url": "https://github.com/y0dev/binary-designer-extension/issues"
+    "url": "https://github.com/y0dev/binary_designer_extension/issues"
   },
   "qna": false,
   "engines": {
