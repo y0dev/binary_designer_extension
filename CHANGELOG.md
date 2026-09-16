@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-09-15
 
 - **Fixed: JSON edits didn't reach the Form tab.** Editing the JSON tab
   correctly re-emitted the Binary tab and layout preview (they're driven by the

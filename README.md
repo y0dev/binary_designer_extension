@@ -406,6 +406,7 @@ type-checked separately from the CSP-locked webview scripts in `media/`.
 
 | Version | Highlights |
 | --- | --- |
+| **0.3.0** | Type dropdown + `[]` array toggle (no typing); fixed JSON-edits-not-reaching-Form-tab; `defaultView` / `generateOnSave` / `binaryTab.*` settings; README "Tabs" + regrouped Settings docs |
 | **0.2.0** | Binary tab (colour-coded hex dump, Add palette, drag-to-reorder); reserved fields; per-struct sizes in the preview / layout doc; frame-creation walkthrough |
 | **0.1.0** | Form / JSON editor, three generators, round-trip check, pure tested `src/core/` |
 
