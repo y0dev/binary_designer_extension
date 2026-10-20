@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 — 2026-10-20
+
+- **Hex-dump column legend.** The Binary tab now shows an `Offset | 00 01 … 0F
+  | ASCII` header row above the hex dump, pinned to the top of its scroll area
+  as you scroll through a large sample binary — matching the classic
+  hex-editor layout.
+- **`binaryDesigner.layoutPreview.offsetBase`** (`hex` default, or `decimal`)
+  controls how the layout preview panel's Offset column is printed; applies to
+  already-open editors immediately. Does not affect the generated
+  `<name>_layout.md`, which always uses decimal.
+- `examples/.vscode/settings.json` updated with the new setting.
+
 ## 0.4.1 — 2026-09-16
 
 - **Fixed: `repository` / `bugs` pointed at the wrong GitHub repo.**

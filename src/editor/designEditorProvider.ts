@@ -37,25 +37,32 @@ interface HostToWebview {
   defaulted: string[];
 }
 
-/** Pushed live when `binaryDesigner.binaryTab.*` changes, no reopen needed. */
+/**
+ * Pushed live when `binaryDesigner.binaryTab.*` or `binaryDesigner.layoutPreview.*`
+ * changes — no reopen needed.
+ */
 interface ConfigMessage {
   type: 'config';
   bytesPerRow: number;
   maxBytesShown: number;
+  offsetBase: 'hex' | 'decimal';
 }
 
-interface BinaryTabConfig {
+interface PanelConfig {
   bytesPerRow: number;
   maxBytesShown: number;
+  offsetBase: 'hex' | 'decimal';
 }
 
-function readBinaryTabConfig(): BinaryTabConfig {
+function readPanelConfig(): PanelConfig {
   const cfg = vscode.workspace.getConfiguration('binaryDesigner');
   const bytesPerRow = Number(cfg.get('binaryTab.bytesPerRow', 16));
   const maxBytesShown = Number(cfg.get('binaryTab.maxBytesShown', 8192));
+  const offsetBase = cfg.get<string>('layoutPreview.offsetBase', 'hex');
   return {
     bytesPerRow: [8, 16, 32].includes(bytesPerRow) ? bytesPerRow : 16,
     maxBytesShown: Number.isFinite(maxBytesShown) && maxBytesShown >= 256 ? maxBytesShown : 8192,
+    offsetBase: offsetBase === 'decimal' ? 'decimal' : 'hex',
   };
 }
 
@@ -78,7 +85,7 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
     };
     const rawDefaultView = vscode.workspace.getConfiguration('binaryDesigner').get<string>('defaultView', 'form');
     const defaultView = ['form', 'json', 'binary'].includes(rawDefaultView) ? rawDefaultView : 'form';
-    webview.html = this.getHtml(webview, defaultView, readBinaryTabConfig());
+    webview.html = this.getHtml(webview, defaultView, readPanelConfig());
 
     this.activeDesignUri = document.uri;
 
@@ -142,8 +149,11 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
     });
 
     const configSub = vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('binaryDesigner.binaryTab')) {
-        const msg: ConfigMessage = { type: 'config', ...readBinaryTabConfig() };
+      if (
+        e.affectsConfiguration('binaryDesigner.binaryTab') ||
+        e.affectsConfiguration('binaryDesigner.layoutPreview')
+      ) {
+        const msg: ConfigMessage = { type: 'config', ...readPanelConfig() };
         void webview.postMessage(msg);
       }
     });
@@ -223,7 +233,7 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
     await document.save();
   }
 
-  private getHtml(webview: vscode.Webview, defaultView: string, binaryTab: BinaryTabConfig): string {
+  private getHtml(webview: vscode.Webview, defaultView: string, panel: PanelConfig): string {
     const nonce = getNonce();
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, 'media', 'editor.js'),
@@ -250,8 +260,9 @@ export class DesignEditorProvider implements vscode.CustomTextEditorProvider {
 </head>
 <body
   data-default-view="${escapeAttr(defaultView)}"
-  data-bytes-per-row="${binaryTab.bytesPerRow}"
-  data-max-bytes-shown="${binaryTab.maxBytesShown}"
+  data-bytes-per-row="${panel.bytesPerRow}"
+  data-max-bytes-shown="${panel.maxBytesShown}"
+  data-offset-base="${escapeAttr(panel.offsetBase)}"
 >
   <header class="toolbar">
     <div class="tabs">

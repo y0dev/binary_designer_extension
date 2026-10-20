@@ -37,18 +37,26 @@
     /** binaryDesigner.binaryTab.maxBytesShown / bytesPerRow — see the 'config' message */
     hexRenderCap: 8192,
     hexBytesPerRow: 16,
+    /** binaryDesigner.layoutPreview.offsetBase — 'hex' | 'decimal' */
+    offsetBase: 'hex',
   };
 
-  // Settings baked into the page when it was opened (defaultView, binaryTab.*);
-  // binaryTab.* also updates live via a 'config' message if the setting changes
-  // while the editor is open.
+  // Settings baked into the page when it was opened (defaultView, binaryTab.*,
+  // layoutPreview.offsetBase); binaryTab.* and offsetBase also update live via
+  // a 'config' message if the setting changes while the editor is open.
   (function readInitialConfig() {
     const ds = (document.body && document.body.dataset) || {};
     const bpr = Number(ds.bytesPerRow);
     const cap = Number(ds.maxBytesShown);
     if (bpr === 8 || bpr === 16 || bpr === 32) state.hexBytesPerRow = bpr;
     if (Number.isFinite(cap) && cap >= 256) state.hexRenderCap = cap;
+    if (ds.offsetBase === 'decimal') state.offsetBase = 'decimal';
   })();
+
+  /** Format a byte offset per binaryDesigner.layoutPreview.offsetBase. */
+  function formatOffset(n) {
+    return state.offsetBase === 'decimal' ? String(n) : '0x' + n.toString(16).padStart(2, '0');
+  }
 
   const FIELD_HUES = [210, 145, 32, 275, 0, 190, 95, 320, 55, 250, 165, 15];
   function hashStr(s) {
@@ -135,14 +143,19 @@
     const msg = ev.data;
     if (!msg) return;
     if (msg.type === 'config') {
-      // binaryDesigner.binaryTab.* changed — apply live, no reopen needed.
+      // binaryDesigner.binaryTab.* / layoutPreview.offsetBase changed — apply
+      // live, no reopen needed.
       if (msg.bytesPerRow === 8 || msg.bytesPerRow === 16 || msg.bytesPerRow === 32) {
         state.hexBytesPerRow = msg.bytesPerRow;
       }
       if (typeof msg.maxBytesShown === 'number' && msg.maxBytesShown >= 256) {
         state.hexRenderCap = msg.maxBytesShown;
       }
+      if (msg.offsetBase === 'hex' || msg.offsetBase === 'decimal') {
+        state.offsetBase = msg.offsetBase;
+      }
       renderHex();
+      renderPreview();
       return;
     }
     if (msg.type !== 'update') return;
@@ -306,7 +319,7 @@
     for (const r of l.rows) {
       if (r.offset > cursor) {
         rows.push(el('tr', { class: 'pad' }, [
-          el('td', { class: 'num', text: String(cursor) }),
+          el('td', { class: 'num', text: formatOffset(cursor) }),
           el('td', { text: '(padding)' }),
           el('td', { text: `uint8_t[${r.offset - cursor}]` }),
           el('td', { class: 'num', text: String(r.offset - cursor) }),
@@ -320,7 +333,7 @@
         onmouseenter: () => setHoverField(r.name),
         onmouseleave: () => setHoverField(null),
       }, [
-        el('td', { class: 'num', text: String(r.offset) }),
+        el('td', { class: 'num', text: formatOffset(r.offset) }),
         el('td', {}, el('code', { text: r.name })),
         el('td', {}, el('code', { text: r.cType + r.cArraySuffix })),
         el('td', { class: 'num', title: each ? `${r.elemSize} bytes each × ${r.elemCount}` : '' }, [
@@ -333,7 +346,7 @@
     }
     if (l.size > cursor) {
       rows.push(el('tr', { class: 'pad' }, [
-        el('td', { class: 'num', text: String(cursor) }),
+        el('td', { class: 'num', text: formatOffset(cursor) }),
         el('td', { text: '(tail padding)' }),
         el('td', { text: `uint8_t[${l.size - cursor}]` }),
         el('td', { class: 'num', text: String(l.size - cursor) }),
@@ -342,7 +355,8 @@
     body.appendChild(el('h4', { text: 'Frame layout' }));
     body.appendChild(el('table', {}, [
       el('thead', {}, el('tr', {}, [
-        el('th', { text: 'Off' }), el('th', { text: 'Name' }), el('th', { text: 'C type' }), el('th', { class: 'num', text: 'Size' }),
+        el('th', { title: 'binaryDesigner.layoutPreview.offsetBase', text: state.offsetBase === 'hex' ? 'Off (hex)' : 'Off (dec)' }),
+        el('th', { text: 'Name' }), el('th', { text: 'C type' }), el('th', { class: 'num', text: 'Size' }),
       ])),
       el('tbody', {}, rows),
     ]));
@@ -593,6 +607,18 @@
     const shown = Math.min(total, state.hexRenderCap);
     const perRow = state.hexBytesPerRow;
     const half = Math.floor(perRow / 2);
+
+    // ---- column legend: Offset | 00 01 .. 0F | ASCII, pinned to the top ----
+    const header = el('div', { class: 'hex-row hex-header' });
+    header.appendChild(el('span', { class: 'hex-off', text: 'Offset' }));
+    const headCols = el('span', { class: 'hex-hexcols' });
+    for (let j = 0; j < perRow; j++) {
+      const mid = j === half ? ' ' : '';
+      headCols.appendChild(el('span', { class: 'hex-cell colhdr', text: mid + j.toString(16).padStart(2, '0') + ' ' }));
+    }
+    header.appendChild(headCols);
+    header.appendChild(el('span', { class: 'hex-ascii', text: 'ASCII' }));
+    body.appendChild(header);
 
     for (let base = 0; base < shown; base += perRow) {
       const row = el('div', { class: 'hex-row' });

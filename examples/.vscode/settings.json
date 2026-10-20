@@ -45,5 +45,8 @@
   "binaryDesigner.defaultView": "form",
   "binaryDesigner.binaryTab.bytesPerRow": 16,
   "binaryDesigner.binaryTab.maxBytesShown": 8192,
+  // "hex" (0x10) or "decimal" (16) for the layout preview's Offset column.
+  // Doesn't affect the generated _layout.md, which always uses decimal.
+  "binaryDesigner.layoutPreview.offsetBase": "hex",
   "binaryDesigner.identifierAutoFix": true
 }

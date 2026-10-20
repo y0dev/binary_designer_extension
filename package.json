@@ -2,7 +2,7 @@
   "name": "binary-file-designer",
   "displayName": "Binary File Designer",
   "description": "Design binary structures in a form editor and generate a sample binary, a C header, and a layout document for embedded development.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "devdoesit",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -245,6 +245,16 @@
           "default": 8192,
           "minimum": 256,
           "markdownDescription": "Maximum number of bytes rendered inline in the Binary tab. A sample binary larger than this shows its size and a prompt to use **Generate Sample Binary** instead of a (very long) hex dump. Takes effect on already-open editors without reopening them."
+        },
+        "binaryDesigner.layoutPreview.offsetBase": {
+          "type": "string",
+          "enum": ["hex", "decimal"],
+          "enumDescriptions": [
+            "Show offsets as 0x.. (e.g. 0x10)",
+            "Show offsets as plain numbers (e.g. 16)"
+          ],
+          "default": "hex",
+          "description": "How the Layout preview panel's Offset column is printed. Applies to already-open editors immediately. Does not affect the generated <name>_layout.md, which always uses decimal."
         },
         "binaryDesigner.header.staticAssert": {
           "type": "boolean",

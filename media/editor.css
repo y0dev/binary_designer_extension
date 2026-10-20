@@ -269,11 +269,25 @@ code { font-family: var(--vscode-editor-font-family, monospace); }
   line-height: 1.55;
   white-space: pre;
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 70vh;
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 10px;
 }
 .hex-row { display: flex; gap: 14px; }
+.hex-row.hex-header {
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-descriptionForeground, #888);
+  font-weight: 600;
+  padding-bottom: 4px;
+  margin: -1px 0 4px;
+  border-bottom: 1px solid var(--border);
+}
+.hex-row.hex-header .hex-cell.colhdr { opacity: 0.85; }
 .hex-off { color: var(--vscode-descriptionForeground, #888); user-select: none; }
 .hex-hexcols, .hex-ascii { display: inline-block; }
 .hex-cell { border-radius: 2px; }

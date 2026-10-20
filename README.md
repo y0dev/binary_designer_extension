@@ -55,7 +55,9 @@ The tree editor. This is where you build the design without hand-writing JSON:
   byte layout against a packed one —
   see [Packing: on, off, or none](#packing-on-off-or-none).
 - Watch the **layout preview** (right-hand panel) as you go — struct sizes,
-  offsets, and any padding the packer inserts update on every change.
+  offsets, and any padding the packer inserts update on every change. Offsets
+  print in hex by default (`0x10`); set `binaryDesigner.layoutPreview.offsetBase`
+  to `decimal` for plain numbers instead — applies to already-open editors.
 
 ![The form editor with the live layout preview](docs/images/form-editor.png)
 
@@ -71,7 +73,9 @@ the JSON parses.
 ### Binary tab
 
 The sample binary this design would emit, as a classic `Offset · Hex · ASCII`
-dump with each top-level field's bytes colour-coded:
+dump with each top-level field's bytes colour-coded. A column legend — the
+`Offset` label, the `00 01 … 0F` byte-column header, and `ASCII` — stays
+pinned to the top of the dump as you scroll, the way a hex editor's does:
 
 - **Hover** a byte, a field chip, or a layout-preview row — the other two
   cross-highlight so you can see exactly which bytes are which field.
@@ -168,8 +172,9 @@ _Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
   arrays) under the design's `packing` and `endianness`, plus the total size and
   every packer-inserted padding byte.
 - **Binary tab** — the sample binary as an `Offset · Hex · ASCII` dump, each
-  field's bytes colour-coded; hover a byte, a field chip or a layout row to
-  cross-highlight the other two.
+  field's bytes colour-coded; a column legend (`Offset`, `00 01 … 0F`, `ASCII`)
+  stays pinned to the top as you scroll; hover a byte, a field chip or a
+  layout row to cross-highlight the other two.
 - **Add fields from the hex view** — an Add palette (`u8 … f64`, `char[16]`,
   `bytes[4]`, `enum`, `array`, `struct`, `reserve u32`, `reserve[16]`, every
   reusable struct); click to append or drag onto a byte to insert there.
@@ -210,9 +215,11 @@ _Static_assert(sizeof(SensorFrame) == 816, "SensorFrame layout drift");
   padding. See [Packing: on, off, or none](#packing-on-off-or-none).
 - **Generate on save** (opt-in, `binaryDesigner.generateOnSave`) — re-run
   chosen generators automatically every time you save a design.
-- **Pick your starting tab** (`binaryDesigner.defaultView`) and the Binary
-  tab's **bytes per row** / **max bytes shown** (`binaryDesigner.binaryTab.*`,
-  the latter applies live, no reopen needed) — see [Settings](#settings).
+- **Pick your starting tab** (`binaryDesigner.defaultView`), the Binary tab's
+  **bytes per row** / **max bytes shown** (`binaryDesigner.binaryTab.*`), and
+  the layout preview's **offset base** — `hex` (default) or `decimal`
+  (`binaryDesigner.layoutPreview.offsetBase`). All three apply live, no reopen
+  needed — see [Settings](#settings).
 - **Designs view** — an Activity Bar list of every `*.design.json` in the
   workspace (size / error count), kept live by a file watcher. Empty (no
   designs, or no folder open at all) shows **Create Design** and **Open
@@ -433,6 +440,7 @@ repo, since that opens `examples/` as the workspace.
 | `binaryDesigner.defaultView` | `form` | Which tab a design opens on: `form`, `json`, or `binary`. All three always show the same document. |
 | `binaryDesigner.binaryTab.bytesPerRow` | `16` | Bytes per row in the Binary tab's hex dump: `8`, `16`, or `32`. |
 | `binaryDesigner.binaryTab.maxBytesShown` | `8192` | Cap on bytes rendered inline; a bigger sample binary shows its size and a prompt to use **Generate Sample Binary** instead. Raise it for a large frame if your machine can take the extra rendering. |
+| `binaryDesigner.layoutPreview.offsetBase` | `hex` | How the layout preview's Offset column is printed: `hex` (`0x10`) or `decimal` (`16`). Doesn't affect the generated `<name>_layout.md`, which always uses decimal. |
 | `binaryDesigner.identifierAutoFix` | `true` | Offer one-click *fix name* actions for invalid C identifiers in the editor. |
 
 ## Building from source
@@ -456,6 +464,7 @@ type-checked separately from the CSP-locked webview scripts in `media/`.
 
 | Version | Highlights |
 | --- | --- |
+| **0.5.0** | Binary tab hex-dump column legend (pinned `Offset \| 00..0F \| ASCII` header); `layoutPreview.offsetBase` (hex/decimal) setting |
 | **0.4.0** | Size field disables itself for fixed-size types; `"packing": false` (natural alignment, no `#pragma pack`); Undo / Redo toolbar; Designs-view empty state (Create Design / Open Folder) |
 | **0.3.0** | Type dropdown + `[]` array toggle (no typing); fixed JSON-edits-not-reaching-Form-tab; `defaultView` / `generateOnSave` / `binaryTab.*` settings; README "Tabs" + regrouped Settings docs |
 | **0.2.0** | Binary tab (colour-coded hex dump, Add palette, drag-to-reorder); reserved fields; per-struct sizes in the preview / layout doc; frame-creation walkthrough |
